@@ -19,6 +19,10 @@ body {
   margin: 0 0 6px 0; font-size: 24px; font-weight: 700;
   letter-spacing: -0.5px;
 }
+.header h1 .ver {
+  font-size: 12px; opacity: 0.7; margin-left: 8px; font-weight: 400;
+  vertical-align: middle;
+}
 .header p {
   margin: 0; font-size: 13px; opacity: 0.85;
 }
@@ -96,7 +100,7 @@ body {
 <body>
 
 <div class="header">
-  <h1>🔧 소모품관리</h1>
+  <h1>🔧 소모품관리 <span class="ver">v1.2</span></h1>
   <p>현장에서 쓰는 도구 모음</p>
 </div>
 
@@ -117,12 +121,12 @@ body {
     </button>
   </div>
 
-  <div class="section-title">📊 보고 / 결재</div>
+  <div class="section-title">📋 보고 / 결재</div>
   <div class="grid">
-    <a class="card c4" href="https://knagbyeongju-123.github.io/smtec_main2/approval_report.html" target="_blank" rel="noopener">
-      <div class="icon">📊</div>
-      <div class="label">월 보고서</div>
-      <div class="desc">월간 결재 보고서 작성</div>
+    <a class="card c4" href="https://knagbyeongju-123.github.io/msm_stock/approval.html" target="_blank" rel="noopener">
+      <div class="icon">📋</div>
+      <div class="label">결재함</div>
+      <div class="desc">월보고 / 발주 / 폐기 결재</div>
     </a>
 
     <button class="card coming-soon" type="button">
@@ -133,21 +137,16 @@ body {
   </div>
 
   <div class="footer">
-    v1.1 · msm
+    v1.2 · msm
   </div>
 </div>
 
 <script>
-// 모바일 터치 더블 파이어 방지
 document.querySelectorAll('.card').forEach(card => {
   if (card.classList.contains('coming-soon')) return;
   let touched = false;
-
   card.addEventListener('touchend', e => {
-    if (card.tagName === 'A') {
-      // 링크 카드는 기본 동작(새 탭 열기) 사용
-      return;
-    }
+    if (card.tagName === 'A') return;
     e.preventDefault();
     touched = true;
     card.click();
