@@ -35,7 +35,7 @@ body {
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   max-width: 600px;
-  margin: 0 auto;
+  margin: 0 auto 20px auto;
 }
 
 .card {
@@ -64,7 +64,6 @@ body {
   font-size: 11px; color: #888; line-height: 1.3;
 }
 
-/* 카드 색상 변형 */
 .card.c1 .icon { background: linear-gradient(135deg, #28a745, #20c997); }
 .card.c2 .icon { background: linear-gradient(135deg, #1a3a5c, #2c5282); }
 .card.c3 .icon { background: linear-gradient(135deg, #fd7e14, #ff9a3c); }
@@ -118,8 +117,23 @@ body {
     </button>
   </div>
 
+  <div class="section-title">📊 보고 / 결재</div>
+  <div class="grid">
+    <a class="card c4" href="https://knagbyeongju-123.github.io/smtec_main2/approval_report.html" target="_blank" rel="noopener">
+      <div class="icon">📊</div>
+      <div class="label">월 보고서</div>
+      <div class="desc">월간 결재 보고서 작성</div>
+    </a>
+
+    <button class="card coming-soon" type="button">
+      <div class="icon">➕</div>
+      <div class="label">도구 추가</div>
+      <div class="desc">곧 추가됩니다</div>
+    </button>
+  </div>
+
   <div class="footer">
-    v1.0 · msm
+    v1.1 · msm
   </div>
 </div>
 
@@ -132,7 +146,6 @@ document.querySelectorAll('.card').forEach(card => {
   card.addEventListener('touchend', e => {
     if (card.tagName === 'A') {
       // 링크 카드는 기본 동작(새 탭 열기) 사용
-      // touchend에서 막지 않음 - 브라우저가 click을 발화시키도록 둠
       return;
     }
     e.preventDefault();
