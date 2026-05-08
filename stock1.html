@@ -395,7 +395,20 @@ input[type="file"] { display: none; }
       </div>
       <div class="form-group">
         <label>단위</label>
-        <input type="text" id="fUnit" value="EA">
+        <select id="fUnit">
+          <option value="EA">EA (개)</option>
+          <option value="SET">SET (세트)</option>
+          <option value="BOX">BOX (박스)</option>
+          <option value="L">L (리터)</option>
+          <option value="ML">ML (밀리리터)</option>
+          <option value="KG">KG (킬로그램)</option>
+          <option value="G">G (그램)</option>
+          <option value="M">M (미터)</option>
+          <option value="ROLL">ROLL (롤)</option>
+          <option value="DRUM">DRUM (드럼)</option>
+          <option value="PACK">PACK (팩)</option>
+          <option value="기타">기타</option>
+        </select>
       </div>
     </div>
     <div class="form-group">
@@ -405,17 +418,17 @@ input[type="file"] { display: none; }
     <div class="form-row">
       <div class="form-group">
         <label>현재고</label>
-        <input type="number" id="fStock" value="0">
+        <input type="number" id="fStock" placeholder="0">
       </div>
       <div class="form-group">
         <label>안전재고</label>
-        <input type="number" id="fMinStock" value="0">
+        <input type="number" id="fMinStock" placeholder="0">
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
         <label>단가(원)</label>
-        <input type="number" id="fPrice" value="0">
+        <input type="number" id="fPrice" placeholder="0">
       </div>
       <div class="form-group">
         <label>위치(랙)</label>
@@ -839,11 +852,19 @@ create policy "all" on press_inventory_history for all using (true) with check (
     $('editId').value = item ? item.id : '';
     $('fName').value = item ? item.name || '' : '';
     $('fCategory').value = item ? item.category || '금형부품' : '금형부품';
-    $('fUnit').value = item ? item.unit || 'EA' : 'EA';
+    // 단위는 select - 기존 값이 옵션에 없으면 동적으로 추가
+    const unitVal = item ? (item.unit || 'EA') : 'EA';
+    const fUnit = $('fUnit');
+    if (![...fUnit.options].some(o => o.value === unitVal)) {
+      const opt = document.createElement('option');
+      opt.value = unitVal; opt.textContent = unitVal;
+      fUnit.appendChild(opt);
+    }
+    fUnit.value = unitVal;
     $('fSpec').value = item ? item.spec || '' : '';
-    $('fStock').value = item ? (item.stock != null ? item.stock : 0) : 0;
-    $('fMinStock').value = item ? (item.min_stock != null ? item.min_stock : 0) : 0;
-    $('fPrice').value = item ? (item.price != null ? item.price : 0) : 0;
+    $('fStock').value = item ? (item.stock != null ? item.stock : '') : '';
+    $('fMinStock').value = item ? (item.min_stock != null ? item.min_stock : '') : '';
+    $('fPrice').value = item ? (item.price != null ? item.price : '') : '';
     $('fLocation').value = item ? item.location || '' : '';
     $('fVendor').value = item ? item.vendor || '' : '';
     $('fMemo').value = item ? item.memo || '' : '';
