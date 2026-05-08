@@ -267,7 +267,7 @@ input[type="file"] { display: none; }
 <body>
 
 <header>
-  <h1>📦 소모품 재고관리 <span class="ver">v1.4</span></h1>
+  <h1>📦 소모품 재고관리 <span class="ver">v1.5</span></h1>
   <button class="btn-icon" id="btnSettings">⚙️</button>
 </header>
 
@@ -338,7 +338,7 @@ input[type="file"] { display: none; }
 <button class="fab" id="btnAdd">+</button>
 
 <div class="app-footer">
-  소모품 재고관리 v1.4 · msm
+  소모품 재고관리 v1.5 · msm
 </div>
 
 <div id="errMsg"></div>
@@ -501,48 +501,10 @@ input[type="file"] { display: none; }
       </div>
     </div>
 
-    <h3 style="margin:0 0 8px 0;font-size:15px">☁️ Supabase 연결</h3>
-    <p style="font-size:12px;color:#666">데이터를 클라우드에 저장하려면 Supabase 정보를 입력하세요.</p>
-    <div class="form-group">
-      <label>Supabase URL</label>
-      <input type="text" id="cfgUrl" placeholder="https://xxxxx.supabase.co">
-    </div>
-    <div class="form-group">
-      <label>Anon Key</label>
-      <div class="password-wrap">
-        <input type="password" id="cfgKey" placeholder="eyJhbGc...">
-        <button class="eye-toggle" id="eyeToggle" type="button">👁</button>
-      </div>
-    </div>
-    <button class="btn-secondary" id="btnTestConn" style="width:100%;margin-bottom:8px" type="button">연결 테스트</button>
-    <div class="test-result" id="testResult"></div>
-    <details style="margin-top:12px;font-size:12px;color:#666">
-      <summary style="cursor:pointer">📘 테이블 생성 SQL 보기</summary>
-      <pre style="background:#f5f5f5;padding:8px;border-radius:4px;font-size:11px;overflow-x:auto;white-space:pre-wrap">create table press_inventory_items (
-  id bigserial primary key,
-  name text not null,
-  category text, spec text,
-  unit text default 'EA',
-  stock int default 0, min_stock int default 0,
-  price int default 0,
-  location text, vendor text, memo text, photo text,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-create table press_inventory_history (
-  id bigserial primary key,
-  item_id bigint references press_inventory_items(id) on delete cascade,
-  item_name text, type text, qty int, memo text,
-  created_at timestamptz default now()
-);
-alter table press_inventory_items enable row level security;
-alter table press_inventory_history enable row level security;
-create policy "all" on press_inventory_items for all using (true) with check (true);
-create policy "all" on press_inventory_history for all using (true) with check (true);</pre>
-    </details>
+    <p style="font-size:11px;color:#aab2bd;text-align:center;margin:8px 0 0 0">☁️ 클라우드 자동 연결됨</p>
+
     <div class="modal-buttons">
       <button class="btn-secondary" id="btnSettingsClose" type="button">닫기</button>
-      <button class="btn-primary" id="btnSettingsSave" type="button">저장</button>
     </div>
   </div>
 </div>
@@ -555,6 +517,10 @@ create policy "all" on press_inventory_history for all using (true) with check (
   const T_ITEMS = 'press_inventory_items';
   const T_HIST = 'press_inventory_history';
   const DEFAULT_CATEGORIES = ['금형부품', '소모공구', '유압부품', '전기부품', '안전용품', '기타'];
+
+  // === Supabase 하드코딩 ===
+  const SUPABASE_URL = 'https://xrmwfsuitikqibwqxede.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_0mgJ2cQeYpIDcfJi_9p4pA_dlaknATN';
 
   let sb = null;
   let items = [];
@@ -703,11 +669,9 @@ create policy "all" on press_inventory_history for all using (true) with check (
 
   // ============ Supabase ============
   function initSupabase() {
-    const url = localStorage.getItem(LS + 'url');
-    const key = localStorage.getItem(LS + 'key');
-    if (url && key && window.supabase) {
+    if (window.supabase) {
       try {
-        sb = window.supabase.createClient(url, key);
+        sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       } catch(e) {
         showErr('Supabase 초기화 실패: ' + e.message);
       }
@@ -1137,49 +1101,9 @@ create policy "all" on press_inventory_history for all using (true) with check (
 
   // ============ Settings ============
   function openSettings() {
-    $('cfgUrl').value = localStorage.getItem(LS + 'url') || '';
-    $('cfgKey').value = localStorage.getItem(LS + 'key') || '';
-    $('testResult').className = 'test-result';
-    $('testResult').textContent = '';
     $('newCategoryInput').value = '';
     renderCategoryList();
     openModal('modalSettings');
-  }
-
-  async function testConnection() {
-    const url = $('cfgUrl').value.trim();
-    const key = $('cfgKey').value.trim();
-    const res = $('testResult');
-    if (!url || !key) {
-      res.className = 'test-result error';
-      res.textContent = 'URL과 Key를 모두 입력하세요';
-      return;
-    }
-    try {
-      const c = window.supabase.createClient(url, key);
-      const r = await c.from(T_ITEMS).select('id').limit(1);
-      if (r.error) throw r.error;
-      res.className = 'test-result success';
-      res.textContent = '✅ 연결 성공!';
-    } catch(e) {
-      res.className = 'test-result error';
-      res.textContent = '❌ 실패: ' + e.message;
-    }
-  }
-
-  function saveSettings() {
-    const url = $('cfgUrl').value.trim();
-    const key = $('cfgKey').value.trim();
-    if (url && key) {
-      localStorage.setItem(LS + 'url', url);
-      localStorage.setItem(LS + 'key', key);
-    } else {
-      localStorage.removeItem(LS + 'url');
-      localStorage.removeItem(LS + 'key');
-    }
-    initSupabase();
-    closeModal('modalSettings');
-    loadData();
   }
 
   // ============ CSV ============
@@ -1428,12 +1352,6 @@ create policy "all" on press_inventory_history for all using (true) with check (
 
     // 설정
     tap('btnSettingsClose', () => closeModal('modalSettings'));
-    tap('btnTestConn', testConnection);
-    tap('btnSettingsSave', saveSettings);
-    tap('eyeToggle', () => {
-      const inp = $('cfgKey');
-      inp.type = inp.type === 'password' ? 'text' : 'password';
-    });
     tap('btnAddCategory', addCategory);
     $('newCategoryInput').addEventListener('keypress', e => {
       if (e.key === 'Enter') {
