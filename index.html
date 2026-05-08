@@ -1026,13 +1026,24 @@ function bindClick(id, fn) {
 
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.tab').forEach(t => {
-    t.addEventListener('click', () => {
+    let tabTouched = false;
+    const switchTab = () => {
       document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
       t.classList.add('active');
       ['list','history','export'].forEach(name => {
         document.getElementById('tab-' + name).style.display = name === t.dataset.tab ? 'block' : 'none';
       });
       document.querySelector('.fab').style.display = t.dataset.tab === 'list' ? 'block' : 'none';
+    };
+    t.addEventListener('touchend', e => {
+      e.preventDefault();
+      tabTouched = true;
+      switchTab();
+      setTimeout(() => tabTouched = false, 500);
+    });
+    t.addEventListener('click', () => {
+      if (tabTouched) return;
+      switchTab();
     });
   });
 
