@@ -516,7 +516,7 @@ create policy "all" on reports for all using (true) with check (true);</pre>
       }
       // 안전재고 미달 자동 추가 (한 번만, 사용자가 비웠으면 다시 안 채움)
       const lowItems = items.filter(it =>
-        it.min_stock != null && it.min_stock > 0 && it.stock <= it.min_stock
+        it.min_stock != null && it.min_stock > 0 && it.stock < it.min_stock
       );
       if (curPicked.length === 0 && lowItems.length > 0) {
         curPicked = lowItems.map(it => ({
@@ -588,8 +588,8 @@ create policy "all" on reports for all using (true) with check (true);</pre>
     // 발주 화면이면 재고부족 품목을 위로 정렬
     if (targetId === 'purchaseItemList') {
       filtered = filtered.slice().sort((a, b) => {
-        const aLow = a.min_stock != null && a.min_stock > 0 && a.stock <= a.min_stock;
-        const bLow = b.min_stock != null && b.min_stock > 0 && b.stock <= b.min_stock;
+        const aLow = a.min_stock != null && a.min_stock > 0 && a.stock < a.min_stock;
+        const bLow = b.min_stock != null && b.min_stock > 0 && b.stock < b.min_stock;
         if (aLow && !bLow) return -1;
         if (!aLow && bLow) return 1;
         return (a.name || '').localeCompare(b.name || '');
@@ -608,7 +608,7 @@ create policy "all" on reports for all using (true) with check (true);</pre>
     }
     el.innerHTML = filtered.slice(0, 100).map(it => {
       const picked = curPicked.find(p => String(p.id) === String(it.id));
-      const isLow = it.min_stock != null && it.min_stock > 0 && it.stock <= it.min_stock;
+      const isLow = it.min_stock != null && it.min_stock > 0 && it.stock < it.min_stock;
       return '<div class="item-pick-row ' + (picked ? 'selected' : '') + (isLow ? ' low' : '') + '" data-id="' + it.id + '">' +
         '<div class="name">' + escapeHtml(it.name) +
           (isLow ? ' <span style="color:#dc3545;font-size:11px;font-weight:600">⚠️ 재고부족</span>' : '') +
