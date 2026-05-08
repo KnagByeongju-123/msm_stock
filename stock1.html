@@ -253,7 +253,7 @@ input[type="file"] { display: none; }
 <div class="tabs">
   <button class="tab active" data-tab="list" type="button">재고</button>
   <button class="tab" data-tab="history" type="button">이력</button>
-  <button class="tab" data-tab="export" type="button">내보내기</button>
+  <button class="tab" data-tab="export" type="button">일괄처리</button>
 </div>
 
 <div class="container">
@@ -312,7 +312,7 @@ input[type="file"] { display: none; }
         <p style="margin:6px 0 0 0">· 첫 줄은 헤더(컬럼명)이며 그대로 두세요<br>· 분류는 금형부품/소모공구/유압부품/전기부품/안전용품/기타 중 하나<br>· 빈 셀은 그대로 두면 됩니다<br>· 먼저 "재고 목록 CSV"로 받아서 양식으로 쓰셔도 됩니다</p>
       </details>
       <button class="btn-secondary" id="btnDownloadTemplate" style="width:100%;margin-bottom:8px">📋 양식 CSV 받기</button>
-      <button class="btn-primary" id="btnUploadCSV" style="width:100%">📥 CSV 파일 선택</button>
+      <button class="btn-primary" id="btnUploadCSV" style="width:100%">📥 CSV 업로드</button>
       <input type="file" id="csvInput" accept=".csv,text/csv">
       <div id="uploadResult" style="display:none;margin-top:10px;padding:10px;border-radius:6px;font-size:13px"></div>
     </div>
