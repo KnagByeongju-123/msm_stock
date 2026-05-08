@@ -119,8 +119,10 @@ header h1 .ver {
 }
 .item-pick-row:last-child { border-bottom: none; }
 .item-pick-row.selected { background: #f3eafd; }
+.item-pick-row.low { background: #fff5f5; }
+.item-pick-row.low.selected { background: #f5dfde; }
 .item-pick-row .name { font-weight: 500; flex: 1; }
-.item-pick-row .stock { font-size: 12px; color: #888; }
+.item-pick-row .stock { font-size: 12px; color: #888; white-space: nowrap; }
 
 .picked-list {
   background: #f8f9fa; padding: 10px; border-radius: 6px;
@@ -493,6 +495,14 @@ create policy "all" on reports for all using (true) with check (true);</pre>
     $('commentField').style.display = 'block';
     $('actionArea').style.display = 'block';
 
+    // 작성자/부서 - 비어있을 때만 저장된 값으로 자동 채움
+    if (!$('docAuthor').value) {
+      $('docAuthor').value = localStorage.getItem(LS + 'author') || '';
+    }
+    if (!$('docDept').value) {
+      $('docDept').value = localStorage.getItem(LS + 'dept') || '';
+    }
+
     const today = new Date();
     if (t === 'report') {
       if (!$('docTitle').value) {
@@ -504,9 +514,11 @@ create policy "all" on reports for all using (true) with check (true);</pre>
       if (!$('docTitle').value) {
         $('docTitle').value = today.toLocaleDateString('ko-KR') + ' 소모품 발주 요청';
       }
-      // 안전재고 미달 자동 추가
-      const lowItems = items.filter(it => it.min_stock > 0 && it.stock <= it.min_stock);
-      if (curPicked.length === 0) {
+      // 안전재고 미달 자동 추가 (한 번만, 사용자가 비웠으면 다시 안 채움)
+      const lowItems = items.filter(it =>
+        it.min_stock != null && it.min_stock > 0 && it.stock <= it.min_stock
+      );
+      if (curPicked.length === 0 && lowItems.length > 0) {
         curPicked = lowItems.map(it => ({
           id: it.id, name: it.name, spec: it.spec || '', vendor: it.vendor || '',
           unit: it.unit || 'EA',
@@ -572,19 +584,43 @@ create policy "all" on reports for all using (true) with check (true);</pre>
   function renderItemPickList(targetId, query) {
     const el = $(targetId);
     const q = (query || '').toLowerCase();
-    const filtered = items.filter(it => !q || (it.name || '').toLowerCase().includes(q));
+    let filtered = items.filter(it => !q || (it.name || '').toLowerCase().includes(q));
+    // 발주 화면이면 재고부족 품목을 위로 정렬
+    if (targetId === 'purchaseItemList') {
+      filtered = filtered.slice().sort((a, b) => {
+        const aLow = a.min_stock != null && a.min_stock > 0 && a.stock <= a.min_stock;
+        const bLow = b.min_stock != null && b.min_stock > 0 && b.stock <= b.min_stock;
+        if (aLow && !bLow) return -1;
+        if (!aLow && bLow) return 1;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+    }
+    if (items.length === 0) {
+      el.innerHTML = '<div style="padding:14px;text-align:center;color:#888;font-size:13px;line-height:1.6">' +
+        '🔌 재고 데이터를 불러올 수 없습니다.<br>' +
+        '<b>⚙️ 설정</b>에서 Supabase URL/Key를<br>' +
+        '<b>재고관리와 동일하게</b> 입력해주세요.</div>';
+      return;
+    }
     if (filtered.length === 0) {
-      el.innerHTML = '<div style="padding:12px;text-align:center;color:#888;font-size:13px">품목이 없습니다.</div>';
+      el.innerHTML = '<div style="padding:12px;text-align:center;color:#888;font-size:13px">검색 결과가 없습니다.</div>';
       return;
     }
     el.innerHTML = filtered.slice(0, 100).map(it => {
       const picked = curPicked.find(p => String(p.id) === String(it.id));
-      const isLow = it.min_stock > 0 && it.stock <= it.min_stock;
-      return '<div class="item-pick-row ' + (picked ? 'selected' : '') + '" data-id="' + it.id + '">' +
+      const isLow = it.min_stock != null && it.min_stock > 0 && it.stock <= it.min_stock;
+      return '<div class="item-pick-row ' + (picked ? 'selected' : '') + (isLow ? ' low' : '') + '" data-id="' + it.id + '">' +
         '<div class="name">' + escapeHtml(it.name) +
-          (isLow ? ' <span style="color:#dc3545;font-size:11px">⚠️ 부족</span>' : '') +
+          (isLow ? ' <span style="color:#dc3545;font-size:11px;font-weight:600">⚠️ 재고부족</span>' : '') +
+          (picked ? ' <span style="color:#28a745;font-size:11px;font-weight:600">✓ 선택됨</span>' : '') +
         '</div>' +
-        '<div class="stock">재고 ' + it.stock + ' ' + escapeHtml(it.unit || 'EA') + '</div>' +
+        '<div class="stock">' +
+          '<span style="' + (isLow ? 'color:#dc3545;font-weight:600' : '') + '">' +
+            '재고 ' + it.stock +
+          '</span>' +
+          (it.min_stock > 0 ? ' <span style="color:#888;font-size:11px">/ 안전 ' + it.min_stock + '</span>' : '') +
+          ' ' + escapeHtml(it.unit || 'EA') +
+        '</div>' +
       '</div>';
     }).join('');
     el.querySelectorAll('.item-pick-row').forEach(row => {
@@ -1056,20 +1092,23 @@ ${body}
       tap(c, () => selectType(c.dataset.type));
     });
 
-    // 작성자/부서 자동 채우기
-    $('docAuthor').value = localStorage.getItem(LS + 'author') || '';
-    $('docDept').value = localStorage.getItem(LS + 'dept') || '';
+    // 작성자/부서는 처음엔 빈칸 (양식 선택 후 자동 채움 시도)
 
     // 액션
     tap('btnPDF', () => {
       const doc = buildDoc();
       if (!validateDoc(doc)) return;
+      // 작성자/부서 자동 기억
+      if (doc.author) localStorage.setItem(LS + 'author', doc.author);
+      if (doc.dept) localStorage.setItem(LS + 'dept', doc.dept);
       doc.created_at = new Date().toISOString();
       outputPDF(doc);
     });
     tap('btnExcel', () => {
       const doc = buildDoc();
       if (!validateDoc(doc)) return;
+      if (doc.author) localStorage.setItem(LS + 'author', doc.author);
+      if (doc.dept) localStorage.setItem(LS + 'dept', doc.dept);
       doc.created_at = new Date().toISOString();
       outputExcel(doc);
     });
