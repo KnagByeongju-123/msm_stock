@@ -212,7 +212,7 @@ header h1 .ver {
 <body>
 
 <header>
-  <h1>📄 소모품 보고서 <span class="ver">v1.4</span></h1>
+  <h1>📄 소모품 보고서 <span class="ver">v1.6</span></h1>
   <button class="btn-icon" id="btnSettings">⚙️</button>
 </header>
 
@@ -261,7 +261,7 @@ header h1 .ver {
         </div>
         <div class="form-group">
           <label>부서</label>
-          <input type="text" id="docDept" placeholder="품질관리팀">
+          <input type="text" id="docDept" placeholder="부서명">
         </div>
       </div>
       <details style="margin-top:6px">
@@ -370,20 +370,48 @@ header h1 .ver {
     </p>
 
     <div style="background:#f8f9fa;padding:12px;border-radius:8px;margin-top:12px">
-      <h3 style="margin:0 0 8px 0;font-size:14px">💾 저장된 정보</h3>
-      <p style="font-size:12px;color:#666;margin:0 0 8px 0">한 번 입력한 작성자/부서/푸터를 자동 기억합니다.</p>
-      <div id="savedInfo" style="font-size:13px;line-height:1.8"></div>
-      <button class="btn-secondary" id="btnClearInfo" type="button" style="background:#e9ecef;color:#333;padding:8px 12px;border:none;border-radius:6px;font-weight:600;font-family:inherit;font-size:13px;cursor:pointer;margin-top:6px;width:100%">저장된 정보 지우기</button>
+      <h3 style="margin:0 0 4px 0;font-size:14px">💾 기본 정보 (자동 채움)</h3>
+      <p style="font-size:11px;color:#888;margin:0 0 10px 0">여기에 입력해두면 새 보고서 작성 시 자동으로 채워집니다.</p>
+
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:10px">
+          <label style="font-size:12px">작성자</label>
+          <input type="text" id="cfgAuthor" placeholder="홍길동" style="padding:8px;font-size:14px">
+        </div>
+        <div class="form-group" style="margin-bottom:10px">
+          <label style="font-size:12px">부서</label>
+          <input type="text" id="cfgDept" placeholder="부서명" style="padding:8px;font-size:14px">
+        </div>
+      </div>
+
+      <div style="border-top:1px dashed #ddd;padding-top:10px;margin-top:4px">
+        <p style="font-size:12px;color:#6f42c1;font-weight:500;margin:0 0 8px 0">📌 PDF 하단 푸터</p>
+        <div class="form-group" style="margin-bottom:8px">
+          <label style="font-size:12px">좌측</label>
+          <input type="text" id="cfgFooterLeft" placeholder="예: MSM-품질-2026-001" style="padding:8px;font-size:14px">
+        </div>
+        <div class="form-group" style="margin-bottom:8px">
+          <label style="font-size:12px">중앙</label>
+          <input type="text" id="cfgFooterCenter" placeholder="예: 회사명 또는 비고" style="padding:8px;font-size:14px">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label style="font-size:12px">우측</label>
+          <input type="text" id="cfgFooterRight" placeholder="예: 1 / 1" style="padding:8px;font-size:14px">
+        </div>
+      </div>
+
+      <button class="btn-secondary" id="btnClearInfo" type="button" style="background:#fff;color:#dc3545;border:1px solid #dc3545;padding:8px 12px;border-radius:6px;font-weight:600;font-family:inherit;font-size:12px;cursor:pointer;margin-top:10px;width:100%">🗑 모두 지우기</button>
     </div>
 
     <div class="modal-buttons">
-      <button class="btn-secondary" id="btnSettingsClose" type="button" style="background:#e9ecef;color:#333">닫기</button>
+      <button class="btn-secondary" id="btnSettingsClose" type="button" style="background:#e9ecef;color:#333">취소</button>
+      <button class="btn-primary" id="btnSettingsSave" type="button">저장</button>
     </div>
   </div>
 </div>
 
 <div class="app-footer">
-  소모품 보고서 v1.4 · msm
+  소모품 보고서 v1.6 · msm
 </div>
 
 <script>
@@ -1313,28 +1341,40 @@ ${(doc.footer_left || doc.footer_center || doc.footer_right) ? `
 
   // ========== Settings ==========
   function openSettings() {
-    const author = localStorage.getItem(LS + 'author') || '(없음)';
-    const dept = localStorage.getItem(LS + 'dept') || '(없음)';
-    const fl = localStorage.getItem(LS + 'footerLeft') || '(없음)';
-    const fc = localStorage.getItem(LS + 'footerCenter') || '(없음)';
-    const fr = localStorage.getItem(LS + 'footerRight') || '(없음)';
-    $('savedInfo').innerHTML =
-      '<b>작성자:</b> ' + escapeHtml(author) + '<br>' +
-      '<b>부서:</b> ' + escapeHtml(dept) + '<br>' +
-      '<b>푸터(좌):</b> ' + escapeHtml(fl) + '<br>' +
-      '<b>푸터(중):</b> ' + escapeHtml(fc) + '<br>' +
-      '<b>푸터(우):</b> ' + escapeHtml(fr);
+    $('cfgAuthor').value = localStorage.getItem(LS + 'author') || '';
+    $('cfgDept').value = localStorage.getItem(LS + 'dept') || '';
+    $('cfgFooterLeft').value = localStorage.getItem(LS + 'footerLeft') || '';
+    $('cfgFooterCenter').value = localStorage.getItem(LS + 'footerCenter') || '';
+    $('cfgFooterRight').value = localStorage.getItem(LS + 'footerRight') || '';
     openModal('modalSettings');
   }
 
+  function saveSettings() {
+    const setOrRemove = (key, val) => {
+      if (val) localStorage.setItem(LS + key, val);
+      else localStorage.removeItem(LS + key);
+    };
+    setOrRemove('author', $('cfgAuthor').value.trim());
+    setOrRemove('dept', $('cfgDept').value.trim());
+    setOrRemove('footerLeft', $('cfgFooterLeft').value.trim());
+    setOrRemove('footerCenter', $('cfgFooterCenter').value.trim());
+    setOrRemove('footerRight', $('cfgFooterRight').value.trim());
+    closeModal('modalSettings');
+    showNotice('✅ 설정이 저장되었습니다.');
+  }
+
   function clearSavedInfo() {
-    if (!confirm('저장된 작성자/부서/푸터 정보를 모두 지우시겠습니까?')) return;
+    if (!confirm('저장된 정보를 모두 지우시겠습니까?')) return;
+    $('cfgAuthor').value = '';
+    $('cfgDept').value = '';
+    $('cfgFooterLeft').value = '';
+    $('cfgFooterCenter').value = '';
+    $('cfgFooterRight').value = '';
     localStorage.removeItem(LS + 'author');
     localStorage.removeItem(LS + 'dept');
     localStorage.removeItem(LS + 'footerLeft');
     localStorage.removeItem(LS + 'footerCenter');
     localStorage.removeItem(LS + 'footerRight');
-    openSettings();
   }
 
   function switchTab(name) {
@@ -1406,6 +1446,7 @@ ${(doc.footer_left || doc.footer_center || doc.footer_right) ? `
     // 설정
     tap('btnSettings', openSettings);
     tap('btnSettingsClose', () => closeModal('modalSettings'));
+    tap('btnSettingsSave', saveSettings);
     tap('btnClearInfo', clearSavedInfo);
 
     // 모달 배경
