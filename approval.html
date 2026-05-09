@@ -146,7 +146,7 @@ header h1 .ver {
 .saved-card {
   background: white; border-radius: 8px; padding: 12px;
   margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  border-left: 4px solid #6f42c1; cursor: pointer;
+  border-left: 4px solid #6f42c1;
 }
 .saved-card .top {
   display: flex; justify-content: space-between; align-items: flex-start;
@@ -157,8 +157,19 @@ header h1 .ver {
   background: #e7f1fb; color: #1a3a5c; white-space: nowrap;
 }
 .saved-card .title { font-weight: 600; font-size: 15px; flex: 1; }
-.saved-card .meta { font-size: 12px; color: #666; }
+.saved-card .meta { font-size: 12px; color: #666; margin-bottom: 8px; }
 .saved-card .meta span { margin-right: 8px; }
+.saved-card .card-actions {
+  display: flex; gap: 6px; padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+.card-btn {
+  flex: 1; padding: 8px 4px; border: none; border-radius: 6px;
+  font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.card-btn.view { background: #e9ecef; color: #333; }
+.card-btn.edit { background: #6f42c1; color: white; }
+.card-btn.del { background: #fff; color: #dc3545; border: 1px solid #dc3545; }
 
 .empty-state { text-align: center; padding: 40px 20px; color: #888; }
 
@@ -212,7 +223,7 @@ header h1 .ver {
 <body>
 
 <header>
-  <h1>📄 소모품 보고서 <span class="ver">v1.6</span></h1>
+  <h1>📄 소모품 보고서 <span class="ver">v1.7</span></h1>
   <button class="btn-icon" id="btnSettings">⚙️</button>
 </header>
 
@@ -411,7 +422,7 @@ header h1 .ver {
 </div>
 
 <div class="app-footer">
-  소모품 보고서 v1.6 · msm
+  소모품 보고서 v1.7 · msm
 </div>
 
 <script>
@@ -1212,15 +1223,47 @@ ${(doc.footer_left || doc.footer_center || doc.footer_right) ? `
           (d.author ? '<span>✏️ ' + escapeHtml(d.author) + '</span>' : '') +
           (d.dept ? '<span>🏢 ' + escapeHtml(d.dept) + '</span>' : '') +
         '</div>' +
+        '<div class="card-actions">' +
+          '<button class="card-btn view" data-act="view" data-id="' + d.id + '" type="button">👁 보기</button>' +
+          '<button class="card-btn edit" data-act="edit" data-id="' + d.id + '" type="button">✏️ 수정</button>' +
+          '<button class="card-btn del" data-act="del" data-id="' + d.id + '" type="button">🗑 삭제</button>' +
+        '</div>' +
       '</div>';
     }).join('');
-    el.querySelectorAll('.saved-card').forEach(card => {
-      tap(card, () => {
-        const id = card.dataset.id;
+
+    // 카드 클릭 이벤트는 빈 영역만, 버튼은 별도 핸들링
+    el.querySelectorAll('.card-btn').forEach(btn => {
+      tap(btn, e => {
+        if (e && e.stopPropagation) e.stopPropagation();
+        const id = btn.dataset.id;
+        const act = btn.dataset.act;
         const doc = savedDocs.find(d => String(d.id) === String(id));
-        if (doc) openSavedDoc(doc);
+        if (!doc) return;
+        curSavedDoc = doc;
+        if (act === 'view') openSavedDoc(doc);
+        else if (act === 'edit') reopenSavedDoc();
+        else if (act === 'del') quickDeleteSavedDoc();
       });
     });
+  }
+
+  // 저장함에서 즉시 삭제
+  async function quickDeleteSavedDoc() {
+    if (!curSavedDoc) return;
+    if (!confirm('"' + curSavedDoc.title + '"\n\n정말 삭제하시겠습니까?')) return;
+    try {
+      if (sb) {
+        const r = await sb.from(T_REPORTS).delete().eq('id', curSavedDoc.id);
+        if (r.error) throw r.error;
+      } else {
+        savedDocs = savedDocs.filter(d => d.id !== curSavedDoc.id);
+        localStorage.setItem(LS + 'docs', JSON.stringify(savedDocs));
+      }
+      await loadAll();
+      showNotice('🗑 삭제되었습니다.');
+    } catch(e) {
+      showErr('삭제 실패: ' + e.message);
+    }
   }
 
   function openSavedDoc(doc) {
