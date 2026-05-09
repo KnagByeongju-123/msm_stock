@@ -223,7 +223,7 @@ header h1 .ver {
 <body>
 
 <header>
-  <h1>📄 소모품 보고서 <span class="ver">v1.7</span></h1>
+  <h1>📄 소모품 보고서 <span class="ver">v1.8</span></h1>
   <button class="btn-icon" id="btnSettings">⚙️</button>
 </header>
 
@@ -422,7 +422,7 @@ header h1 .ver {
 </div>
 
 <div class="app-footer">
-  소모품 보고서 v1.7 · msm
+  소모품 보고서 v1.8 · msm
 </div>
 
 <script>
@@ -1224,7 +1224,7 @@ ${(doc.footer_left || doc.footer_center || doc.footer_right) ? `
           (d.dept ? '<span>🏢 ' + escapeHtml(d.dept) + '</span>' : '') +
         '</div>' +
         '<div class="card-actions">' +
-          '<button class="card-btn view" data-act="view" data-id="' + d.id + '" type="button">👁 보기</button>' +
+          '<button class="card-btn view" data-act="view" data-id="' + d.id + '" type="button">📋 보기</button>' +
           '<button class="card-btn edit" data-act="edit" data-id="' + d.id + '" type="button">✏️ 수정</button>' +
           '<button class="card-btn del" data-act="del" data-id="' + d.id + '" type="button">🗑 삭제</button>' +
         '</div>' +
@@ -1269,6 +1269,8 @@ ${(doc.footer_left || doc.footer_center || doc.footer_right) ? `
   function openSavedDoc(doc) {
     curSavedDoc = doc;
     $('savedTitle').textContent = doc.title;
+    const fmt = n => Number(n || 0).toLocaleString('ko-KR');
+
     let html = '<div style="font-size:13px;line-height:1.7;background:#f8f9fa;padding:10px;border-radius:6px;margin-bottom:10px">' +
       '<b>양식:</b> ' + typeLabel(doc.doc_type) + '<br>' +
       (doc.author ? '<b>작성자:</b> ' + escapeHtml(doc.author) + '<br>' : '') +
@@ -1277,17 +1279,85 @@ ${(doc.footer_left || doc.footer_center || doc.footer_right) ? `
       '</div>';
 
     if (doc.doc_type === 'report' && doc.content && doc.content.summary) {
-      html += '<p style="font-size:13px"><b>대상 월:</b> ' + escapeHtml(doc.content.month || '') + '</p>';
-      html += '<p style="font-size:12px;color:#666">' + doc.content.summary.length + '개 품목</p>';
-    } else if ((doc.doc_type === 'purchase' || doc.doc_type === 'disposal') && doc.content && doc.content.items) {
-      html += '<p style="font-size:12px;color:#666">' + doc.content.items.length + '개 품목</p>';
-      html += '<table class="summary-table"><thead><tr><th>품명</th><th style="text-align:right">수량</th></tr></thead><tbody>' +
-        doc.content.items.slice(0, 10).map(it =>
-          '<tr><td>' + escapeHtml(it.name) + '</td><td class="num">' + it.qty + ' ' + escapeHtml(it.unit || '') + '</td></tr>'
+      const items = doc.content.summary;
+      let totalIn = 0, totalOut = 0;
+      items.forEach(s => { totalIn += s.in; totalOut += s.out; });
+      // 요약
+      html += '<div style="background:#f3eafd;padding:10px;border-radius:6px;margin-bottom:10px">' +
+        '<div style="font-size:12px;font-weight:600;color:#6f42c1;margin-bottom:4px">📊 요약</div>' +
+        '<div style="font-size:13px;line-height:1.7">' +
+          '<b>대상 월:</b> ' + escapeHtml(doc.content.month || '') + '<br>' +
+          '<b>품목 수:</b> ' + items.length + '개<br>' +
+          '<b>총 입고:</b> ' + fmt(totalIn) + ' / <b>총 출고:</b> ' + fmt(totalOut) +
+        '</div>' +
+      '</div>';
+      // 세부
+      html += '<div style="font-size:12px;font-weight:600;color:#555;margin-bottom:4px">📋 세부 내용</div>';
+      html += '<table class="summary-table">' +
+        '<thead><tr><th>품명</th><th style="text-align:right">입고</th><th style="text-align:right">출고</th></tr></thead><tbody>' +
+        items.slice(0, 30).map(s =>
+          '<tr><td>' + escapeHtml(s.name) + '</td>' +
+          '<td class="num" style="color:#28a745">' + (s.in || '-') + '</td>' +
+          '<td class="num" style="color:#fd7e14">' + (s.out || '-') + '</td></tr>'
         ).join('') +
-        (doc.content.items.length > 10 ? '<tr><td colspan="2" style="text-align:center;color:#888">외 ' + (doc.content.items.length - 10) + '건</td></tr>' : '') +
+        (items.length > 30 ? '<tr><td colspan="3" style="text-align:center;color:#888;font-size:11px">외 ' + (items.length - 30) + '건 (PDF/Excel에 전체 포함)</td></tr>' : '') +
         '</tbody></table>';
+
+    } else if ((doc.doc_type === 'purchase' || doc.doc_type === 'disposal') && doc.content && doc.content.items) {
+      const its = doc.content.items;
+      const isPurchase = doc.doc_type === 'purchase';
+      let totalQty = 0, totalAmt = 0;
+      its.forEach(it => {
+        totalQty += (it.qty || 0);
+        totalAmt += (it.amount || 0);
+      });
+      // 요약
+      html += '<div style="background:#f3eafd;padding:10px;border-radius:6px;margin-bottom:10px">' +
+        '<div style="font-size:12px;font-weight:600;color:#6f42c1;margin-bottom:4px">📊 요약</div>' +
+        '<div style="font-size:13px;line-height:1.7">' +
+          '<b>품목 수:</b> ' + its.length + '종<br>' +
+          '<b>총 수량:</b> ' + fmt(totalQty) + '<br>' +
+          (totalAmt > 0 ? '<b>' + (isPurchase ? '예상 총액' : '손실 추정액') + ':</b> ' + fmt(totalAmt) + '원' : '') +
+        '</div>' +
+      '</div>';
+      // 세부
+      html += '<div style="font-size:12px;font-weight:600;color:#555;margin-bottom:4px">📋 세부 내용</div>';
+      html += '<table class="summary-table">' +
+        '<thead><tr><th>품명</th><th style="text-align:right">수량</th>' +
+        (totalAmt > 0 ? '<th style="text-align:right">금액</th>' : '') +
+        '</tr></thead><tbody>' +
+        its.slice(0, 20).map(it =>
+          '<tr><td>' + escapeHtml(it.name) + (it.spec ? ' <span style="color:#888;font-size:11px">' + escapeHtml(it.spec) + '</span>' : '') + '</td>' +
+          '<td class="num">' + fmt(it.qty) + ' ' + escapeHtml(it.unit || '') + '</td>' +
+          (totalAmt > 0 ? '<td class="num">' + fmt(it.amount || 0) + '</td>' : '') +
+          '</tr>'
+        ).join('') +
+        (its.length > 20 ? '<tr><td colspan="' + (totalAmt > 0 ? 3 : 2) + '" style="text-align:center;color:#888;font-size:11px">외 ' + (its.length - 20) + '건</td></tr>' : '') +
+        '</tbody></table>';
+
+      if (doc.content.reason) {
+        html += '<div style="margin-top:10px"><b style="font-size:13px">' +
+          (isPurchase ? '거래처 / 발주 사유' : '폐기 사유') +
+          '</b>' +
+        '<div style="background:#f8f9fa;padding:8px;border-radius:6px;font-size:13px;margin-top:4px;white-space:pre-wrap">' +
+          escapeHtml(doc.content.reason) + '</div></div>';
+      }
     }
+
+    if (doc.comment) {
+      html += '<div style="margin-top:10px"><b style="font-size:13px">비고 / 추가 의견</b>' +
+        '<div style="background:#f8f9fa;padding:8px;border-radius:6px;font-size:13px;margin-top:4px;white-space:pre-wrap">' +
+          escapeHtml(doc.comment) + '</div></div>';
+    }
+
+    if (doc.footer_left || doc.footer_center || doc.footer_right) {
+      html += '<div style="margin-top:12px;padding-top:8px;border-top:1px dashed #ccc;font-size:11px;color:#666;display:flex;justify-content:space-between;gap:8px">' +
+        '<span>' + escapeHtml(doc.footer_left || '') + '</span>' +
+        '<span>' + escapeHtml(doc.footer_center || '') + '</span>' +
+        '<span>' + escapeHtml(doc.footer_right || '') + '</span>' +
+      '</div>';
+    }
+
     $('savedContent').innerHTML = html;
     openModal('modalSaved');
   }
