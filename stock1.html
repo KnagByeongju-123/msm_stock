@@ -464,13 +464,17 @@ input[type="file"] { display: none; }
     </div>
 
     <div class="form-group">
+      <label>분류 *</label>
+      <select id="fCategory"></select>
+    </div>
+    <div class="form-group">
       <label>품명 *</label>
       <input type="text" id="fName" placeholder="예: 펀치 다이">
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>분류 *</label>
-        <select id="fCategory"></select>
+        <label>규격/모델</label>
+        <input type="text" id="fSpec" placeholder="예: M10x50, 100T">
       </div>
       <div class="form-group">
         <label>단위</label>
@@ -489,10 +493,6 @@ input[type="file"] { display: none; }
           <option value="기타">기타</option>
         </select>
       </div>
-    </div>
-    <div class="form-group">
-      <label>규격/모델</label>
-      <input type="text" id="fSpec" placeholder="예: M10x50, 100T">
     </div>
     <div class="form-row">
       <div class="form-group">
