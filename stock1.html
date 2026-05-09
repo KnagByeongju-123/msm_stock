@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>소모품 재고관리</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body {
@@ -307,7 +308,7 @@ input[type="file"] { display: none; }
 <body>
 
 <header>
-  <h1>📦 소모품 재고관리 <span class="ver">v1.10</span></h1>
+  <h1>📦 소모품 재고관리 <span class="ver">v1.11</span></h1>
   <button class="btn-icon" id="btnSettings">⚙️</button>
 </header>
 
@@ -375,9 +376,9 @@ input[type="file"] { display: none; }
   <div id="page-export" style="display:none">
     <div style="background:white;padding:16px;border-radius:8px;margin-bottom:12px;">
       <h3 style="margin-top:0">📤 데이터 내보내기</h3>
-      <p style="font-size:13px;color:#666">현재 재고 또는 이력을 CSV 파일로 내려받습니다.</p>
-      <button class="btn-primary" style="margin-bottom:8px" id="btnExportItems">📦 재고 목록 CSV</button>
-      <button class="btn-primary" id="btnExportHistory">📋 입출고 이력 CSV</button>
+      <p style="font-size:13px;color:#666">현재 재고 또는 이력을 Excel 파일로 내려받습니다.</p>
+      <button class="btn-primary" style="margin-bottom:8px" id="btnExportItems">📦 재고 목록 Excel</button>
+      <button class="btn-primary" id="btnExportHistory">📋 입출고 이력 Excel</button>
     </div>
 
     <div style="background:white;padding:16px;border-radius:8px;">
@@ -391,7 +392,7 @@ input[type="file"] { display: none; }
         <pre style="background:#f5f5f5;padding:8px;border-radius:4px;font-size:11px;overflow-x:auto;white-space:pre-wrap;margin-top:6px">품명,분류,규격,단위,현재고,안전재고,단가,위치,거래처,비고
 펀치다이,금형부품,M10x50,EA,5,3,15000,A-01,동광공구,
 유압필터,유압부품,100T,EA,2,5,8000,B-03,코리아유압,1호기용</pre>
-        <p style="margin:6px 0 0 0">· 첫 줄은 헤더(컬럼명)이며 그대로 두세요<br>· 분류는 금형부품/소모공구/유압부품/전기부품/안전용품/기타 중 하나<br>· 빈 셀은 그대로 두면 됩니다<br>· 먼저 "재고 목록 CSV"로 받아서 양식으로 쓰셔도 됩니다</p>
+        <p style="margin:6px 0 0 0">· 첫 줄은 헤더(컬럼명)이며 그대로 두세요<br>· 분류는 금형부품/소모공구/유압부품/전기부품/안전용품/기타 중 하나<br>· 빈 셀은 그대로 두면 됩니다<br>· 먼저 "재고 목록 Excel"로 받아서 양식으로 쓰셔도 됩니다</p>
       </details>
       <button class="btn-secondary" id="btnDownloadTemplate" style="width:100%;margin-bottom:8px">📋 양식 CSV 받기</button>
       <button class="btn-primary" id="btnUploadCSV" style="width:100%">📥 CSV 업로드</button>
@@ -405,7 +406,7 @@ input[type="file"] { display: none; }
 <button class="fab" id="btnAdd">+</button>
 
 <div class="app-footer">
-  소모품 재고관리 v1.10 · msm
+  소모품 재고관리 v1.11 · msm
 </div>
 
 <div id="errMsg"></div>
@@ -1267,13 +1268,17 @@ input[type="file"] { display: none; }
   async function deleteItem() {
     const id = $('editId').value;
     if (!id) return;
-    if (!confirm('정말 삭제하시겠습니까?')) return;
+    if (!confirm('정말 삭제하시겠습니까?\n(관련 입출고 이력도 함께 삭제됩니다)')) return;
     try {
       if (sb) {
+        // 이력 먼저 삭제 → 그 다음 품목 삭제
+        const rh = await sb.from(T_HIST).delete().eq('item_id', id);
+        if (rh.error) throw rh.error;
         const r = await sb.from(T_ITEMS).delete().eq('id', id);
         if (r.error) throw r.error;
       } else {
         items = items.filter(x => String(x.id) !== String(id));
+        hist = hist.filter(h => String(h.item_id) !== String(id));
         saveLocal();
       }
       closeModal('modalItem');
@@ -1290,13 +1295,17 @@ input[type="file"] { display: none; }
 
   // 카드에서 직접 삭제
   async function quickDeleteItem(item) {
-    if (!confirm('"' + item.name + '"\n\n정말 삭제하시겠습니까?\n(이력은 함께 삭제됩니다)')) return;
+    if (!confirm('"' + item.name + '"\n\n정말 삭제하시겠습니까?\n(관련 입출고 이력도 함께 삭제됩니다)')) return;
     try {
       if (sb) {
+        // 이력 먼저 삭제 → 그 다음 품목 삭제
+        const rh = await sb.from(T_HIST).delete().eq('item_id', item.id);
+        if (rh.error) throw rh.error;
         const r = await sb.from(T_ITEMS).delete().eq('id', item.id);
         if (r.error) throw r.error;
       } else {
         items = items.filter(x => String(x.id) !== String(item.id));
+        hist = hist.filter(h => String(h.item_id) !== String(item.id));
         saveLocal();
       }
       await loadData();
@@ -1407,28 +1416,53 @@ input[type="file"] { display: none; }
 
   // ============ CSV ============
   function exportCSV(type) {
-    let csv, fname;
-    const today = new Date().toISOString().slice(0, 10);
-    if (type === 'items') {
-      csv = '\uFEFF품명,분류,규격,단위,현재고,안전재고,단가,위치,거래처,비고\n';
-      csv += items.map(i => [
-        i.name, i.category, i.spec, i.unit, i.stock, i.min_stock,
-        i.price, i.location, i.vendor, i.memo
-      ].map(v => '"' + String(v||'').replace(/"/g, '""') + '"').join(',')).join('\n');
-      fname = '재고목록_' + today + '.csv';
-    } else {
-      csv = '\uFEFF일시,품명,구분,수량,메모\n';
-      csv += hist.map(h => [
-        new Date(h.created_at).toLocaleString('ko-KR'),
-        h.item_name, h.type === 'in' ? '입고' : '출고', h.qty, h.memo
-      ].map(v => '"' + String(v||'').replace(/"/g, '""') + '"').join(',')).join('\n');
-      fname = '입출고이력_' + today + '.csv';
+    if (typeof XLSX === 'undefined') {
+      showErr('Excel 라이브러리 로드 실패. 인터넷 연결을 확인하세요.');
+      return;
     }
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = fname;
-    a.click();
+    const today = new Date().toISOString().slice(0, 10);
+    const wb = XLSX.utils.book_new();
+    let ws, fname, sheetName;
+
+    if (type === 'items') {
+      const headers = ['품명','분류','규격','단위','현재고','안전재고','단가','위치','거래처','비고'];
+      const rows = items.map(i => [
+        i.name || '', i.category || '', i.spec || '', i.unit || '',
+        Number(i.stock) || 0, Number(i.min_stock) || 0,
+        Number(i.price) || 0, i.location || '', i.vendor || '', i.memo || ''
+      ]);
+      ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws['!cols'] = [
+        {wch:22},{wch:12},{wch:14},{wch:8},{wch:8},{wch:8},
+        {wch:10},{wch:10},{wch:14},{wch:24}
+      ];
+      // 헤더 행 고정
+      ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+      ws['!autofilter'] = { ref: 'A1:J' + (rows.length + 1) };
+      sheetName = '재고목록';
+      fname = '재고목록_' + today + '.xlsx';
+    } else {
+      const headers = ['일시','품명','구분','수량','메모'];
+      const rows = hist.map(h => [
+        new Date(h.created_at).toLocaleString('ko-KR'),
+        h.item_name || '',
+        h.type === 'in' ? '입고' : '출고',
+        Number(h.qty) || 0,
+        h.memo || ''
+      ]);
+      ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws['!cols'] = [{wch:20},{wch:22},{wch:8},{wch:8},{wch:30}];
+      ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+      ws['!autofilter'] = { ref: 'A1:E' + (rows.length + 1) };
+      sheetName = '입출고이력';
+      fname = '입출고이력_' + today + '.xlsx';
+    }
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    try {
+      XLSX.writeFile(wb, fname);
+    } catch(e) {
+      showErr('Excel 저장 실패: ' + e.message);
+    }
   }
 
   // ============ CSV Upload ============
