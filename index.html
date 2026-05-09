@@ -95,13 +95,65 @@ body {
   text-align: center; margin-top: 30px;
   font-size: 11px; color: #aab2bd;
 }
+
+/* 내 정보 모달 */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: none; align-items: center; justify-content: center;
+  z-index: 1000; padding: 16px;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  background: white; border-radius: 14px; padding: 20px;
+  width: 100%; max-width: 380px;
+}
+.modal h2 {
+  margin: 0 0 6px 0; font-size: 18px; color: #1a3a5c;
+}
+.modal .sub {
+  margin: 0 0 16px 0; font-size: 12px; color: #888; line-height: 1.5;
+}
+.modal label {
+  display: block; font-size: 13px; font-weight: 600;
+  color: #555; margin-bottom: 6px; margin-top: 12px;
+}
+.modal label:first-of-type { margin-top: 0; }
+.modal input {
+  width: 100%; padding: 10px 12px; border: 1px solid #ccc;
+  border-radius: 6px; font-size: 15px; font-family: inherit;
+}
+.modal input:focus { outline: none; border-color: #1a3a5c; }
+.modal-btns {
+  display: flex; gap: 8px; margin-top: 18px;
+}
+.modal-btns button {
+  flex: 1; padding: 11px; border: none; border-radius: 6px;
+  font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.btn-cancel { background: #e9ecef; color: #333; }
+.btn-save { background: #1a3a5c; color: white; }
+
+/* 사용자 표시 배지 */
+.user-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white; padding: 4px 10px; border-radius: 14px;
+  font-size: 12px; margin-top: 8px; cursor: pointer;
+}
+.user-badge .ic { font-size: 13px; }
+.user-badge.empty { opacity: 0.65; }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>🔧 소모품관리 <span class="ver">v1.3</span></h1>
+  <h1>🔧 소모품관리 <span class="ver">v1.4</span></h1>
   <p>현장에서 쓰는 도구 모음</p>
+  <div class="user-badge empty" id="userBadge">
+    <span class="ic">👤</span>
+    <span id="userBadgeText">내 정보 등록</span>
+  </div>
 </div>
 
 <div class="container">
@@ -129,30 +181,118 @@ body {
       <div class="desc">월보고/발주/폐기 PDF·Excel</div>
     </a>
 
-    <button class="card coming-soon" type="button">
-      <div class="icon">➕</div>
-      <div class="label">도구 추가</div>
-      <div class="desc">곧 추가됩니다</div>
+    <button class="card c6" type="button" id="cardUser">
+      <div class="icon">👤</div>
+      <div class="label">내 정보</div>
+      <div class="desc">부서·이름 등록 / 자동 채움</div>
     </button>
   </div>
 
   <div class="footer">
-    v1.3 · msm
+    v1.4 · msm
+  </div>
+</div>
+
+<!-- 내 정보 모달 -->
+<div class="modal-bg" id="modalUser">
+  <div class="modal">
+    <h2>👤 내 정보</h2>
+    <p class="sub">한 번 등록해두면 보고서 작성·재고 입출고 시 자동으로 채워집니다.<br>이 폰에만 저장됩니다.</p>
+
+    <label>부서명</label>
+    <input type="text" id="inpDept" placeholder="예: 생산팀, 품질관리팀">
+
+    <label>이름</label>
+    <input type="text" id="inpName" placeholder="예: 홍길동">
+
+    <div class="modal-btns">
+      <button class="btn-cancel" id="btnCancel" type="button">취소</button>
+      <button class="btn-save" id="btnSave" type="button">저장</button>
+    </div>
   </div>
 </div>
 
 <script>
-document.querySelectorAll('.card').forEach(card => {
-  if (card.classList.contains('coming-soon')) return;
-  let touched = false;
-  card.addEventListener('touchend', e => {
-    if (card.tagName === 'A') return;
-    e.preventDefault();
-    touched = true;
-    card.click();
-    setTimeout(() => touched = false, 500);
+'use strict';
+(function() {
+  // 공용 사용자 정보 키 (재고관리/보고서가 같이 읽음)
+  const K_DEPT = 'msmUser_dept';
+  const K_NAME = 'msmUser_name';
+
+  function $(id) { return document.getElementById(id); }
+
+  function refreshBadge() {
+    const dept = localStorage.getItem(K_DEPT) || '';
+    const name = localStorage.getItem(K_NAME) || '';
+    const badge = $('userBadge');
+    const text = $('userBadgeText');
+    if (dept || name) {
+      badge.classList.remove('empty');
+      text.textContent = (name || '') + (dept ? ' · ' + dept : '');
+    } else {
+      badge.classList.add('empty');
+      text.textContent = '내 정보 등록 (탭)';
+    }
+  }
+
+  function openModal() {
+    $('inpDept').value = localStorage.getItem(K_DEPT) || '';
+    $('inpName').value = localStorage.getItem(K_NAME) || '';
+    $('modalUser').classList.add('show');
+    setTimeout(() => $('inpName').focus(), 100);
+  }
+
+  function closeModal() {
+    $('modalUser').classList.remove('show');
+  }
+
+  function saveInfo() {
+    const dept = $('inpDept').value.trim();
+    const name = $('inpName').value.trim();
+    if (dept) localStorage.setItem(K_DEPT, dept);
+    else localStorage.removeItem(K_DEPT);
+    if (name) localStorage.setItem(K_NAME, name);
+    else localStorage.removeItem(K_NAME);
+    refreshBadge();
+    closeModal();
+  }
+
+  // 카드/배지 탭 → 모달 열기 (모바일 중복 발화 방지)
+  function tap(elOrId, handler) {
+    const el = typeof elOrId === 'string' ? $(elOrId) : elOrId;
+    if (!el) return;
+    let touched = false;
+    el.addEventListener('touchend', e => {
+      touched = true;
+      e.preventDefault();
+      handler(e);
+      setTimeout(() => { touched = false; }, 500);
+    }, { passive: false });
+    el.addEventListener('click', e => {
+      if (touched) return;
+      handler(e);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    refreshBadge();
+    tap('cardUser', openModal);
+    tap('userBadge', openModal);
+    tap('btnCancel', closeModal);
+    tap('btnSave', saveInfo);
+
+    // 모달 배경 탭 시 닫기
+    $('modalUser').addEventListener('click', e => {
+      if (e.target.id === 'modalUser') closeModal();
+    });
+
+    // 카드(외부 링크 a 태그)는 정상 동작하도록 별도 처리 - 기존 로직 유지
+    document.querySelectorAll('.card').forEach(card => {
+      if (card.tagName === 'A') return; // a 태그는 그대로
+      if (card.id === 'cardUser') return; // 이미 처리됨
+    });
   });
-});
+})();
 </script>
 
 </body>
