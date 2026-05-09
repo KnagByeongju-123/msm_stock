@@ -66,22 +66,23 @@ header h1 .ver {
 .summary-card .label { font-size: 11px; color: #666; margin-top: 2px; }
 
 .item-card {
-  background: white; border-radius: 8px; padding: 12px;
+  background: white; border-radius: 8px; padding: 10px 12px;
   margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   border-left: 4px solid #1a3a5c;
-  display: flex; gap: 12px; cursor: pointer;
+  display: flex; gap: 10px;
 }
 .item-card.low-stock { border-left-color: #dc3545; background: #fff5f5; }
 .item-thumb {
-  width: 64px; height: 64px; border-radius: 6px; flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 6px; flex-shrink: 0;
   background: #f0f0f0; display: flex; align-items: center; justify-content: center;
-  overflow: hidden; font-size: 24px; color: #bbb;
+  overflow: hidden; font-size: 18px; color: #bbb;
+  cursor: pointer;
 }
 .item-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.item-body { flex: 1; min-width: 0; }
+.item-body { flex: 1; min-width: 0; cursor: pointer; }
 .item-card .top {
   display: flex; justify-content: space-between; align-items: flex-start;
-  margin-bottom: 4px; gap: 8px;
+  margin-bottom: 2px; gap: 8px;
 }
 .item-name { font-weight: 600; font-size: 15px; flex: 1; word-break: break-all; }
 .item-cat {
@@ -89,7 +90,7 @@ header h1 .ver {
   background: #e7f1fb; color: #1a3a5c; white-space: nowrap;
 }
 .item-meta {
-  font-size: 12px; color: #666; margin-bottom: 6px;
+  font-size: 12px; color: #666; margin-bottom: 4px;
   display: flex; flex-wrap: wrap; gap: 8px;
 }
 .item-meta span::before { content: "ㆍ"; margin-right: 2px; color: #aaa; }
@@ -97,6 +98,16 @@ header h1 .ver {
 .item-stock {
   display: flex; align-items: center; justify-content: space-between;
 }
+.item-actions {
+  display: flex; flex-direction: column; gap: 4px; flex-shrink: 0;
+  padding-left: 4px; border-left: 1px solid #eee; margin-left: 4px;
+}
+.item-actions button {
+  width: 32px; height: 28px; padding: 0; border: none; border-radius: 5px;
+  font-size: 12px; cursor: pointer; font-family: inherit;
+}
+.item-actions .btn-edit { background: #e7f1fb; color: #1a3a5c; }
+.item-actions .btn-del { background: #fff; color: #dc3545; border: 1px solid #f5c6cb; }
 .stock-num { font-size: 20px; font-weight: 700; color: #1a3a5c; }
 .stock-num.low { color: #dc3545; }
 .stock-unit { font-size: 13px; color: #666; margin-left: 4px; font-weight: 400; }
@@ -267,7 +278,7 @@ input[type="file"] { display: none; }
 <body>
 
 <header>
-  <h1>📦 소모품 재고관리 <span class="ver">v1.5</span></h1>
+  <h1>📦 소모품 재고관리 <span class="ver">v1.6</span></h1>
   <button class="btn-icon" id="btnSettings">⚙️</button>
 </header>
 
@@ -338,7 +349,7 @@ input[type="file"] { display: none; }
 <button class="fab" id="btnAdd">+</button>
 
 <div class="app-footer">
-  소모품 재고관리 v1.5 · msm
+  소모품 재고관리 v1.6 · msm
 </div>
 
 <div id="errMsg"></div>
@@ -843,8 +854,8 @@ input[type="file"] { display: none; }
       if (i.vendor) meta.push('<span>🏢 ' + escapeHtml(i.vendor) + '</span>');
       const thumb = i.photo ? '<img src="' + i.photo + '" alt="">' : '📷';
       return '<div class="item-card ' + (isLow ? 'low-stock' : '') + '" data-id="' + i.id + '">' +
-        '<div class="item-thumb">' + thumb + '</div>' +
-        '<div class="item-body">' +
+        '<div class="item-thumb" data-act="open">' + thumb + '</div>' +
+        '<div class="item-body" data-act="open">' +
           '<div class="top">' +
             '<div class="item-name">' + escapeHtml(i.name) +
               (isLow ? ' <span class="low-badge">⚠️ 부족</span>' : '') +
@@ -861,14 +872,34 @@ input[type="file"] { display: none; }
             '<span class="tap-hint">탭하여 입출고</span>' +
           '</div>' +
         '</div>' +
+        '<div class="item-actions">' +
+          '<button class="btn-edit" data-act="edit" data-id="' + i.id + '" type="button" title="수정">✏️</button>' +
+          '<button class="btn-del" data-act="del" data-id="' + i.id + '" type="button" title="삭제">🗑</button>' +
+        '</div>' +
       '</div>';
     }).join('');
 
-    list.querySelectorAll('.item-card').forEach(card => {
-      tap(card, () => {
+    // 입출고는 카드의 thumb/body 클릭 시
+    list.querySelectorAll('[data-act="open"]').forEach(zone => {
+      tap(zone, () => {
+        const card = zone.closest('.item-card');
+        if (!card) return;
         const id = card.dataset.id;
         const item = items.find(x => String(x.id) === String(id));
         if (item) openDetail(item);
+      });
+    });
+
+    // 수정 / 삭제 버튼
+    list.querySelectorAll('.item-actions button').forEach(btn => {
+      tap(btn, e => {
+        if (e && e.stopPropagation) e.stopPropagation();
+        const id = btn.dataset.id;
+        const act = btn.dataset.act;
+        const item = items.find(x => String(x.id) === String(id));
+        if (!item) return;
+        if (act === 'edit') openEdit(item);
+        else if (act === 'del') quickDeleteItem(item);
       });
     });
   }
@@ -1025,6 +1056,28 @@ input[type="file"] { display: none; }
         saveLocal();
       }
       closeModal('modalItem');
+      await loadData();
+    } catch(e) {
+      showErr('삭제 실패: ' + e.message);
+    }
+  }
+
+  // 카드에서 직접 편집 모달 열기
+  function openEdit(item) {
+    openItemModal(item);
+  }
+
+  // 카드에서 직접 삭제
+  async function quickDeleteItem(item) {
+    if (!confirm('"' + item.name + '"\n\n정말 삭제하시겠습니까?\n(이력은 함께 삭제됩니다)')) return;
+    try {
+      if (sb) {
+        const r = await sb.from(T_ITEMS).delete().eq('id', item.id);
+        if (r.error) throw r.error;
+      } else {
+        items = items.filter(x => String(x.id) !== String(item.id));
+        saveLocal();
+      }
       await loadData();
     } catch(e) {
       showErr('삭제 실패: ' + e.message);
