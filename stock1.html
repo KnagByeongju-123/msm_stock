@@ -18,9 +18,6 @@ header {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 header h1 { margin: 0; font-size: 17px; }
-header h1 .ver {
-  font-size: 11px; opacity: 0.7; margin-left: 6px; font-weight: 400;
-}
 .btn-icon {
   background: rgba(255,255,255,0.15); border: none; color: white;
   width: 38px; height: 38px; border-radius: 50%; font-size: 18px;
@@ -66,23 +63,22 @@ header h1 .ver {
 .summary-card .label { font-size: 11px; color: #666; margin-top: 2px; }
 
 .item-card {
-  background: white; border-radius: 8px; padding: 10px 12px;
+  background: white; border-radius: 8px; padding: 12px;
   margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   border-left: 4px solid #1a3a5c;
-  display: flex; gap: 10px;
+  display: flex; gap: 12px; cursor: pointer;
 }
 .item-card.low-stock { border-left-color: #dc3545; background: #fff5f5; }
 .item-thumb {
-  width: 44px; height: 44px; border-radius: 6px; flex-shrink: 0;
+  width: 64px; height: 64px; border-radius: 6px; flex-shrink: 0;
   background: #f0f0f0; display: flex; align-items: center; justify-content: center;
-  overflow: hidden; font-size: 18px; color: #bbb;
-  cursor: pointer;
+  overflow: hidden; font-size: 24px; color: #bbb;
 }
 .item-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.item-body { flex: 1; min-width: 0; cursor: pointer; }
+.item-body { flex: 1; min-width: 0; }
 .item-card .top {
   display: flex; justify-content: space-between; align-items: flex-start;
-  margin-bottom: 2px; gap: 8px;
+  margin-bottom: 4px; gap: 8px;
 }
 .item-name { font-weight: 600; font-size: 15px; flex: 1; word-break: break-all; }
 .item-cat {
@@ -90,7 +86,7 @@ header h1 .ver {
   background: #e7f1fb; color: #1a3a5c; white-space: nowrap;
 }
 .item-meta {
-  font-size: 12px; color: #666; margin-bottom: 4px;
+  font-size: 12px; color: #666; margin-bottom: 6px;
   display: flex; flex-wrap: wrap; gap: 8px;
 }
 .item-meta span::before { content: "ㆍ"; margin-right: 2px; color: #aaa; }
@@ -98,28 +94,12 @@ header h1 .ver {
 .item-stock {
   display: flex; align-items: center; justify-content: space-between;
 }
-.item-actions {
-  display: flex; flex-direction: column; gap: 4px; flex-shrink: 0;
-  padding-left: 4px; border-left: 1px solid #eee; margin-left: 4px;
-}
-.item-actions button {
-  width: 32px; height: 28px; padding: 0; border: none; border-radius: 5px;
-  font-size: 12px; cursor: pointer; font-family: inherit;
-}
-.item-actions .btn-edit { background: #e7f1fb; color: #1a3a5c; }
-.item-actions .btn-del { background: #fff; color: #dc3545; border: 1px solid #f5c6cb; }
 .stock-num { font-size: 20px; font-weight: 700; color: #1a3a5c; }
 .stock-num.low { color: #dc3545; }
 .stock-unit { font-size: 13px; color: #666; margin-left: 4px; font-weight: 400; }
 .tap-hint {
   font-size: 11px; color: #888; background: #f0f4f8;
   padding: 3px 8px; border-radius: 10px;
-}
-.low-badge {
-  display: inline-block; font-size: 10px; font-weight: 700;
-  background: #dc3545; color: white;
-  padding: 2px 6px; border-radius: 4px;
-  margin-left: 6px; vertical-align: middle;
 }
 
 .fab {
@@ -253,39 +233,19 @@ header h1 .ver {
 }
 .photo-buttons button.remove { color: #dc3545; border-color: #dc3545; }
 input[type="file"] { display: none; }
-
-.app-footer {
-  text-align: center; padding: 20px 12px 30px;
-  font-size: 11px; color: #aab2bd;
-}
-
-.cat-chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  background: #e7f1fb; color: #1a3a5c;
-  padding: 6px 4px 6px 10px; border-radius: 14px;
-  font-size: 13px; margin: 0 4px 4px 0;
-}
-.cat-chip .x {
-  background: rgba(26,58,92,0.15); border: none; color: #1a3a5c;
-  width: 22px; height: 22px; border-radius: 50%;
-  font-size: 14px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 600;
-}
-.cat-chip .x:hover { background: #dc3545; color: white; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>📦 소모품 재고관리 <span class="ver">v1.6</span></h1>
+  <h1>📦 소모품 재고관리</h1>
   <button class="btn-icon" id="btnSettings">⚙️</button>
 </header>
 
 <div class="tabs">
   <button class="tab active" data-tab="list" type="button">재고</button>
   <button class="tab" data-tab="history" type="button">이력</button>
-  <button class="tab" data-tab="export" type="button">일괄처리</button>
+  <button class="tab" data-tab="export" type="button">내보내기</button>
 </div>
 
 <div class="container">
@@ -303,6 +263,12 @@ input[type="file"] { display: none; }
       <input type="text" id="searchInput" placeholder="품명/규격/위치 검색">
       <select id="filterCat">
         <option value="">전체</option>
+        <option>금형부품</option>
+        <option>소모공구</option>
+        <option>유압부품</option>
+        <option>전기부품</option>
+        <option>안전용품</option>
+        <option>기타</option>
       </select>
     </div>
 
@@ -317,40 +283,17 @@ input[type="file"] { display: none; }
   </div>
 
   <div id="page-export" style="display:none">
-    <div style="background:white;padding:16px;border-radius:8px;margin-bottom:12px;">
-      <h3 style="margin-top:0">📤 데이터 내보내기</h3>
+    <div style="background:white;padding:16px;border-radius:8px;">
+      <h3 style="margin-top:0">데이터 내보내기</h3>
       <p style="font-size:13px;color:#666">현재 재고 또는 이력을 CSV 파일로 내려받습니다.</p>
       <button class="btn-primary" style="margin-bottom:8px" id="btnExportItems">📦 재고 목록 CSV</button>
       <button class="btn-primary" id="btnExportHistory">📋 입출고 이력 CSV</button>
-    </div>
-
-    <div style="background:white;padding:16px;border-radius:8px;">
-      <h3 style="margin-top:0">📥 재고 일괄 업로드</h3>
-      <p style="font-size:13px;color:#666;line-height:1.5">
-        CSV 파일로 여러 품목을 한 번에 등록할 수 있습니다.<br>
-        <b>품명</b>이 같은 품목이 이미 있으면 <b>수정</b>되고, 없으면 <b>추가</b>됩니다.
-      </p>
-      <details style="margin:8px 0;font-size:12px;color:#666">
-        <summary style="cursor:pointer">📘 CSV 형식 보기</summary>
-        <pre style="background:#f5f5f5;padding:8px;border-radius:4px;font-size:11px;overflow-x:auto;white-space:pre-wrap;margin-top:6px">품명,분류,규격,단위,현재고,안전재고,단가,위치,거래처,비고
-펀치다이,금형부품,M10x50,EA,5,3,15000,A-01,동광공구,
-유압필터,유압부품,100T,EA,2,5,8000,B-03,코리아유압,1호기용</pre>
-        <p style="margin:6px 0 0 0">· 첫 줄은 헤더(컬럼명)이며 그대로 두세요<br>· 분류는 금형부품/소모공구/유압부품/전기부품/안전용품/기타 중 하나<br>· 빈 셀은 그대로 두면 됩니다<br>· 먼저 "재고 목록 CSV"로 받아서 양식으로 쓰셔도 됩니다</p>
-      </details>
-      <button class="btn-secondary" id="btnDownloadTemplate" style="width:100%;margin-bottom:8px">📋 양식 CSV 받기</button>
-      <button class="btn-primary" id="btnUploadCSV" style="width:100%">📥 CSV 업로드</button>
-      <input type="file" id="csvInput" accept=".csv,text/csv">
-      <div id="uploadResult" style="display:none;margin-top:10px;padding:10px;border-radius:6px;font-size:13px"></div>
     </div>
   </div>
 
 </div>
 
 <button class="fab" id="btnAdd">+</button>
-
-<div class="app-footer">
-  소모품 재고관리 v1.6 · msm
-</div>
 
 <div id="errMsg"></div>
 
@@ -388,22 +331,20 @@ input[type="file"] { display: none; }
     <input type="hidden" id="editId">
 
     <div class="form-group">
-      <label>참조 사진 (1:1 정사각, 약 10KB로 압축)</label>
+      <label>참조 사진 (자동으로 약 10KB로 압축)</label>
       <div class="photo-area" id="photoArea">
         <div id="photoPlaceholder">
           <div style="font-size:32px;color:#bbb">📷</div>
-          <div style="font-size:13px;color:#888;margin-top:4px">아래 버튼으로 사진 촬영 또는 선택</div>
+          <div style="font-size:13px;color:#888;margin-top:4px">탭해서 사진 선택/촬영</div>
         </div>
         <img id="photoPreview" class="photo-preview" style="display:none" alt="">
         <div class="photo-info" id="photoInfo" style="display:none"></div>
+        <div class="photo-buttons" id="photoButtons" style="display:none">
+          <button type="button" id="btnChangePhoto">📷 변경</button>
+          <button type="button" class="remove" id="btnRemovePhoto">🗑 제거</button>
+        </div>
       </div>
-      <div class="photo-buttons" style="margin-top:8px">
-        <button type="button" id="btnTakePhoto">📷 촬영</button>
-        <button type="button" id="btnChoosePhoto">🖼 갤러리</button>
-        <button type="button" class="remove" id="btnRemovePhoto" style="display:none">🗑 제거</button>
-      </div>
-      <input type="file" id="photoInputCamera" accept="image/*" capture="environment">
-      <input type="file" id="photoInputGallery" accept="image/*">
+      <input type="file" id="photoInput" accept="image/*">
     </div>
 
     <div class="form-group">
@@ -413,24 +354,15 @@ input[type="file"] { display: none; }
     <div class="form-row">
       <div class="form-group">
         <label>분류 *</label>
-        <select id="fCategory"></select>
+        <select id="fCategory">
+          <option>금형부품</option><option>소모공구</option>
+          <option>유압부품</option><option>전기부품</option>
+          <option>안전용품</option><option>기타</option>
+        </select>
       </div>
       <div class="form-group">
         <label>단위</label>
-        <select id="fUnit">
-          <option value="EA">EA (개)</option>
-          <option value="SET">SET (세트)</option>
-          <option value="BOX">BOX (박스)</option>
-          <option value="L">L (리터)</option>
-          <option value="ML">ML (밀리리터)</option>
-          <option value="KG">KG (킬로그램)</option>
-          <option value="G">G (그램)</option>
-          <option value="M">M (미터)</option>
-          <option value="ROLL">ROLL (롤)</option>
-          <option value="DRUM">DRUM (드럼)</option>
-          <option value="PACK">PACK (팩)</option>
-          <option value="기타">기타</option>
-        </select>
+        <input type="text" id="fUnit" value="EA">
       </div>
     </div>
     <div class="form-group">
@@ -440,17 +372,17 @@ input[type="file"] { display: none; }
     <div class="form-row">
       <div class="form-group">
         <label>현재고</label>
-        <input type="number" id="fStock" placeholder="0">
+        <input type="number" id="fStock" value="0">
       </div>
       <div class="form-group">
         <label>안전재고</label>
-        <input type="number" id="fMinStock" placeholder="0">
+        <input type="number" id="fMinStock" value="0">
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
         <label>단가(원)</label>
-        <input type="number" id="fPrice" placeholder="0">
+        <input type="number" id="fPrice" value="0">
       </div>
       <div class="form-group">
         <label>위치(랙)</label>
@@ -500,22 +432,48 @@ input[type="file"] { display: none; }
 <!-- 설정 모달 -->
 <div class="modal-bg" id="modalSettings">
   <div class="modal">
-    <h2>⚙️ 설정</h2>
-
-    <div style="background:#f8f9fa;padding:12px;border-radius:8px;margin-bottom:16px">
-      <h3 style="margin:0 0 8px 0;font-size:15px">🏷 분류 관리</h3>
-      <p style="font-size:12px;color:#666;margin:0 0 8px 0">품목 분류 목록을 추가/삭제할 수 있습니다.</p>
-      <div id="categoryList" style="margin-bottom:8px"></div>
-      <div style="display:flex;gap:6px">
-        <input type="text" id="newCategoryInput" placeholder="새 분류 입력" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px">
-        <button class="btn-primary" id="btnAddCategory" style="flex:0 0 auto;padding:8px 16px">+ 추가</button>
+    <h2>⚙️ Supabase 설정</h2>
+    <p style="font-size:12px;color:#666">데이터를 클라우드에 저장하려면 Supabase 정보를 입력하세요.</p>
+    <div class="form-group">
+      <label>Supabase URL</label>
+      <input type="text" id="cfgUrl" placeholder="https://xxxxx.supabase.co">
+    </div>
+    <div class="form-group">
+      <label>Anon Key</label>
+      <div class="password-wrap">
+        <input type="password" id="cfgKey" placeholder="eyJhbGc...">
+        <button class="eye-toggle" id="eyeToggle" type="button">👁</button>
       </div>
     </div>
-
-    <p style="font-size:11px;color:#aab2bd;text-align:center;margin:8px 0 0 0">☁️ 클라우드 자동 연결됨</p>
-
+    <button class="btn-secondary" id="btnTestConn" style="width:100%;margin-bottom:8px" type="button">연결 테스트</button>
+    <div class="test-result" id="testResult"></div>
+    <details style="margin-top:12px;font-size:12px;color:#666">
+      <summary style="cursor:pointer">📘 테이블 생성 SQL 보기</summary>
+      <pre style="background:#f5f5f5;padding:8px;border-radius:4px;font-size:11px;overflow-x:auto;white-space:pre-wrap">create table press_inventory_items (
+  id bigserial primary key,
+  name text not null,
+  category text, spec text,
+  unit text default 'EA',
+  stock int default 0, min_stock int default 0,
+  price int default 0,
+  location text, vendor text, memo text, photo text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+create table press_inventory_history (
+  id bigserial primary key,
+  item_id bigint references press_inventory_items(id) on delete cascade,
+  item_name text, type text, qty int, memo text,
+  created_at timestamptz default now()
+);
+alter table press_inventory_items enable row level security;
+alter table press_inventory_history enable row level security;
+create policy "all" on press_inventory_items for all using (true) with check (true);
+create policy "all" on press_inventory_history for all using (true) with check (true);</pre>
+    </details>
     <div class="modal-buttons">
       <button class="btn-secondary" id="btnSettingsClose" type="button">닫기</button>
+      <button class="btn-primary" id="btnSettingsSave" type="button">저장</button>
     </div>
   </div>
 </div>
@@ -527,111 +485,14 @@ input[type="file"] { display: none; }
   const LS = 'pressInv_';
   const T_ITEMS = 'press_inventory_items';
   const T_HIST = 'press_inventory_history';
-  const DEFAULT_CATEGORIES = ['금형부품', '소모공구', '유압부품', '전기부품', '안전용품', '기타'];
-
-  // === Supabase 하드코딩 ===
-  const SUPABASE_URL = 'https://xrmwfsuitikqibwqxede.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_0mgJ2cQeYpIDcfJi_9p4pA_dlaknATN';
 
   let sb = null;
   let items = [];
   let hist = [];
-  let categories = [];
   let curDetail = null;
   let curStockType = 'in';
   let curStockItem = null;
   let curPhoto = null;
-
-  // ============ Categories ============
-  function loadCategories() {
-    const stored = localStorage.getItem(LS + 'categories');
-    if (stored) {
-      try {
-        categories = JSON.parse(stored);
-        if (!Array.isArray(categories) || categories.length === 0) {
-          categories = DEFAULT_CATEGORIES.slice();
-        }
-      } catch(e) {
-        categories = DEFAULT_CATEGORIES.slice();
-      }
-    } else {
-      categories = DEFAULT_CATEGORIES.slice();
-    }
-  }
-
-  function saveCategories() {
-    localStorage.setItem(LS + 'categories', JSON.stringify(categories));
-  }
-
-  function fillCategorySelects() {
-    // 검색 필터
-    const filter = $('filterCat');
-    const curFilter = filter.value;
-    filter.innerHTML = '<option value="">전체</option>' +
-      categories.map(c => '<option>' + escapeHtml(c) + '</option>').join('');
-    if (curFilter && categories.includes(curFilter)) filter.value = curFilter;
-
-    // 품목 모달
-    const fCat = $('fCategory');
-    const curCat = fCat.value;
-    fCat.innerHTML = categories.map(c => '<option>' + escapeHtml(c) + '</option>').join('');
-    if (curCat && categories.includes(curCat)) fCat.value = curCat;
-  }
-
-  function renderCategoryList() {
-    const el = $('categoryList');
-    if (categories.length === 0) {
-      el.innerHTML = '<div style="font-size:12px;color:#999">분류가 없습니다.</div>';
-      return;
-    }
-    el.innerHTML = categories.map((c, i) =>
-      '<span class="cat-chip">' + escapeHtml(c) +
-      '<button class="x" data-idx="' + i + '" type="button">×</button></span>'
-    ).join('');
-    // 삭제 핸들러
-    el.querySelectorAll('.cat-chip .x').forEach(btn => {
-      tap(btn, () => {
-        const idx = parseInt(btn.dataset.idx);
-        const cat = categories[idx];
-        // 사용 중인지 확인
-        const usedBy = items.filter(it => it.category === cat);
-        if (usedBy.length > 0) {
-          if (!confirm(`"${cat}" 분류는 ${usedBy.length}개 품목에서 사용 중입니다.\n그래도 삭제하시겠습니까?\n(품목들은 그대로 유지되고 분류만 목록에서 빠집니다)`)) {
-            return;
-          }
-        }
-        categories.splice(idx, 1);
-        saveCategories();
-        renderCategoryList();
-        fillCategorySelects();
-      });
-    });
-  }
-
-  function addCategory() {
-    const inp = $('newCategoryInput');
-    const v = inp.value.trim();
-    if (!v) { inp.focus(); return; }
-    if (categories.includes(v)) {
-      alert('이미 존재하는 분류입니다.');
-      return;
-    }
-    categories.push(v);
-    saveCategories();
-    inp.value = '';
-    renderCategoryList();
-    fillCategorySelects();
-  }
-
-  // CSV 등에서 새 분류가 들어올 때 자동 추가
-  function ensureCategory(name) {
-    if (!name) return;
-    if (!categories.includes(name)) {
-      categories.push(name);
-      saveCategories();
-      fillCategorySelects();
-    }
-  }
 
   // ============ Util ============
   const $ = id => document.getElementById(id);
@@ -680,9 +541,11 @@ input[type="file"] { display: none; }
 
   // ============ Supabase ============
   function initSupabase() {
-    if (window.supabase) {
+    const url = localStorage.getItem(LS + 'url');
+    const key = localStorage.getItem(LS + 'key');
+    if (url && key && window.supabase) {
       try {
-        sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        sb = window.supabase.createClient(url, key);
       } catch(e) {
         showErr('Supabase 초기화 실패: ' + e.message);
       }
@@ -705,8 +568,6 @@ input[type="file"] { display: none; }
     } else {
       loadLocal();
     }
-    // 기존 품목 데이터에서 사용 중인 분류 자동 추가
-    items.forEach(it => { if (it.category) ensureCategory(it.category); });
     render();
   }
 
@@ -721,34 +582,32 @@ input[type="file"] { display: none; }
   }
 
   // ============ Photo ============
-  // 사진 압축: 1:1 정사각형 + 약 10KB
   async function compressImage(file, target = 10000) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = ev => {
         const img = new Image();
         img.onload = () => {
-          // 정사각형 크롭 (가운데 기준)
-          const side = Math.min(img.width, img.height);
-          const sx = (img.width - side) / 2;
-          const sy = (img.height - side) / 2;
-
           const make = (dim, q) => {
             const c = document.createElement('canvas');
-            c.width = dim; c.height = dim;
+            let w = img.width, h = img.height;
+            if (w > h) {
+              if (w > dim) { h = h * (dim / w); w = dim; }
+            } else {
+              if (h > dim) { w = w * (dim / h); h = dim; }
+            }
+            c.width = w; c.height = h;
             const ctx = c.getContext('2d');
             ctx.fillStyle = '#fff';
-            ctx.fillRect(0, 0, dim, dim);
-            // sx,sy,side,side 를 dim x dim 으로 그림 (1:1 비율 유지)
-            ctx.drawImage(img, sx, sy, side, side, 0, 0, dim, dim);
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
             return c.toDataURL('image/jpeg', q);
           };
-          // 정사각형이라 동일 면적이 더 적으므로 단계 조정
           const tries = [
-            [240, 0.7], [240, 0.55], [220, 0.5], [200, 0.5],
-            [180, 0.45], [160, 0.45], [140, 0.4], [120, 0.4]
+            [320, 0.7], [320, 0.55], [280, 0.5], [240, 0.5],
+            [200, 0.45], [180, 0.4], [160, 0.4], [140, 0.35]
           ];
-          let result = make(240, 0.7);
+          let result = make(320, 0.7);
           for (const [d, q] of tries) {
             const r = make(d, q);
             if (r.length <= target * 1.4) {
@@ -787,19 +646,18 @@ input[type="file"] { display: none; }
     $('photoPreview').style.display = 'block';
     $('photoPlaceholder').style.display = 'none';
     $('photoInfo').style.display = 'block';
-    $('photoInfo').textContent = '약 ' + kb + 'KB · 1:1 정사각형';
-    $('btnRemovePhoto').style.display = 'block';
+    $('photoInfo').textContent = '약 ' + kb + 'KB';
+    $('photoButtons').style.display = 'flex';
     $('photoArea').classList.add('has-photo');
   }
 
   function clearPhoto() {
     curPhoto = null;
-    $('photoInputCamera').value = '';
-    $('photoInputGallery').value = '';
+    $('photoInput').value = '';
     $('photoPreview').style.display = 'none';
     $('photoPlaceholder').style.display = 'block';
     $('photoInfo').style.display = 'none';
-    $('btnRemovePhoto').style.display = 'none';
+    $('photoButtons').style.display = 'none';
     $('photoArea').classList.remove('has-photo');
   }
 
@@ -812,7 +670,7 @@ input[type="file"] { display: none; }
 
   function renderSummary() {
     $('sumTotal').textContent = items.length;
-    const low = items.filter(i => i.stock < i.min_stock && i.min_stock > 0);
+    const low = items.filter(i => i.stock <= i.min_stock && i.min_stock > 0);
     $('sumLow').textContent = low.length;
     const tot = items.reduce((s, i) => s + (i.stock * (i.price || 0)), 0);
     $('sumValue').textContent = Math.round(tot / 10000).toLocaleString();
@@ -847,19 +705,17 @@ input[type="file"] { display: none; }
     }
 
     list.innerHTML = filtered.map(i => {
-      const isLow = i.min_stock > 0 && i.stock < i.min_stock;
+      const isLow = i.min_stock > 0 && i.stock <= i.min_stock;
       const meta = [];
       if (i.spec) meta.push('<span>' + escapeHtml(i.spec) + '</span>');
       if (i.location) meta.push('<span>📍 ' + escapeHtml(i.location) + '</span>');
       if (i.vendor) meta.push('<span>🏢 ' + escapeHtml(i.vendor) + '</span>');
       const thumb = i.photo ? '<img src="' + i.photo + '" alt="">' : '📷';
       return '<div class="item-card ' + (isLow ? 'low-stock' : '') + '" data-id="' + i.id + '">' +
-        '<div class="item-thumb" data-act="open">' + thumb + '</div>' +
-        '<div class="item-body" data-act="open">' +
+        '<div class="item-thumb">' + thumb + '</div>' +
+        '<div class="item-body">' +
           '<div class="top">' +
-            '<div class="item-name">' + escapeHtml(i.name) +
-              (isLow ? ' <span class="low-badge">⚠️ 부족</span>' : '') +
-            '</div>' +
+            '<div class="item-name">' + escapeHtml(i.name) + '</div>' +
             '<div class="item-cat">' + escapeHtml(i.category || '') + '</div>' +
           '</div>' +
           '<div class="item-meta">' + meta.join('') + '</div>' +
@@ -872,34 +728,14 @@ input[type="file"] { display: none; }
             '<span class="tap-hint">탭하여 입출고</span>' +
           '</div>' +
         '</div>' +
-        '<div class="item-actions">' +
-          '<button class="btn-edit" data-act="edit" data-id="' + i.id + '" type="button" title="수정">✏️</button>' +
-          '<button class="btn-del" data-act="del" data-id="' + i.id + '" type="button" title="삭제">🗑</button>' +
-        '</div>' +
       '</div>';
     }).join('');
 
-    // 입출고는 카드의 thumb/body 클릭 시
-    list.querySelectorAll('[data-act="open"]').forEach(zone => {
-      tap(zone, () => {
-        const card = zone.closest('.item-card');
-        if (!card) return;
+    list.querySelectorAll('.item-card').forEach(card => {
+      tap(card, () => {
         const id = card.dataset.id;
         const item = items.find(x => String(x.id) === String(id));
         if (item) openDetail(item);
-      });
-    });
-
-    // 수정 / 삭제 버튼
-    list.querySelectorAll('.item-actions button').forEach(btn => {
-      tap(btn, e => {
-        if (e && e.stopPropagation) e.stopPropagation();
-        const id = btn.dataset.id;
-        const act = btn.dataset.act;
-        const item = items.find(x => String(x.id) === String(id));
-        if (!item) return;
-        if (act === 'edit') openEdit(item);
-        else if (act === 'del') quickDeleteItem(item);
       });
     });
   }
@@ -931,7 +767,7 @@ input[type="file"] { display: none; }
   // ============ Detail Modal ============
   function openDetail(item) {
     curDetail = item;
-    const isLow = item.min_stock > 0 && item.stock < item.min_stock;
+    const isLow = item.min_stock > 0 && item.stock <= item.min_stock;
 
     $('dName').textContent = item.name;
 
@@ -966,23 +802,12 @@ input[type="file"] { display: none; }
     $('btnDelete').style.display = item ? 'block' : 'none';
     $('editId').value = item ? item.id : '';
     $('fName').value = item ? item.name || '' : '';
-    // 분류 - 기존 값이 categories에 없으면 자동 추가
-    const catVal = item ? (item.category || (categories[0] || '기타')) : (categories[0] || '기타');
-    if (item && item.category) ensureCategory(item.category);
-    $('fCategory').value = catVal;
-    // 단위는 select - 기존 값이 옵션에 없으면 동적으로 추가
-    const unitVal = item ? (item.unit || 'EA') : 'EA';
-    const fUnit = $('fUnit');
-    if (![...fUnit.options].some(o => o.value === unitVal)) {
-      const opt = document.createElement('option');
-      opt.value = unitVal; opt.textContent = unitVal;
-      fUnit.appendChild(opt);
-    }
-    fUnit.value = unitVal;
+    $('fCategory').value = item ? item.category || '금형부품' : '금형부품';
+    $('fUnit').value = item ? item.unit || 'EA' : 'EA';
     $('fSpec').value = item ? item.spec || '' : '';
-    $('fStock').value = item ? (item.stock != null ? item.stock : '') : '';
-    $('fMinStock').value = item ? (item.min_stock != null ? item.min_stock : '') : '';
-    $('fPrice').value = item ? (item.price != null ? item.price : '') : '';
+    $('fStock').value = item ? (item.stock != null ? item.stock : 0) : 0;
+    $('fMinStock').value = item ? (item.min_stock != null ? item.min_stock : 0) : 0;
+    $('fPrice').value = item ? (item.price != null ? item.price : 0) : 0;
     $('fLocation').value = item ? item.location || '' : '';
     $('fVendor').value = item ? item.vendor || '' : '';
     $('fMemo').value = item ? item.memo || '' : '';
@@ -1062,28 +887,6 @@ input[type="file"] { display: none; }
     }
   }
 
-  // 카드에서 직접 편집 모달 열기
-  function openEdit(item) {
-    openItemModal(item);
-  }
-
-  // 카드에서 직접 삭제
-  async function quickDeleteItem(item) {
-    if (!confirm('"' + item.name + '"\n\n정말 삭제하시겠습니까?\n(이력은 함께 삭제됩니다)')) return;
-    try {
-      if (sb) {
-        const r = await sb.from(T_ITEMS).delete().eq('id', item.id);
-        if (r.error) throw r.error;
-      } else {
-        items = items.filter(x => String(x.id) !== String(item.id));
-        saveLocal();
-      }
-      await loadData();
-    } catch(e) {
-      showErr('삭제 실패: ' + e.message);
-    }
-  }
-
   // ============ Stock Modal ============
   function openStock(item, type) {
     curStockItem = item;
@@ -1154,9 +957,47 @@ input[type="file"] { display: none; }
 
   // ============ Settings ============
   function openSettings() {
-    $('newCategoryInput').value = '';
-    renderCategoryList();
+    $('cfgUrl').value = localStorage.getItem(LS + 'url') || '';
+    $('cfgKey').value = localStorage.getItem(LS + 'key') || '';
+    $('testResult').className = 'test-result';
+    $('testResult').textContent = '';
     openModal('modalSettings');
+  }
+
+  async function testConnection() {
+    const url = $('cfgUrl').value.trim();
+    const key = $('cfgKey').value.trim();
+    const res = $('testResult');
+    if (!url || !key) {
+      res.className = 'test-result error';
+      res.textContent = 'URL과 Key를 모두 입력하세요';
+      return;
+    }
+    try {
+      const c = window.supabase.createClient(url, key);
+      const r = await c.from(T_ITEMS).select('id').limit(1);
+      if (r.error) throw r.error;
+      res.className = 'test-result success';
+      res.textContent = '✅ 연결 성공!';
+    } catch(e) {
+      res.className = 'test-result error';
+      res.textContent = '❌ 실패: ' + e.message;
+    }
+  }
+
+  function saveSettings() {
+    const url = $('cfgUrl').value.trim();
+    const key = $('cfgKey').value.trim();
+    if (url && key) {
+      localStorage.setItem(LS + 'url', url);
+      localStorage.setItem(LS + 'key', key);
+    } else {
+      localStorage.removeItem(LS + 'url');
+      localStorage.removeItem(LS + 'key');
+    }
+    initSupabase();
+    closeModal('modalSettings');
+    loadData();
   }
 
   // ============ CSV ============
@@ -1185,161 +1026,7 @@ input[type="file"] { display: none; }
     a.click();
   }
 
-  // ============ CSV Upload ============
-  // 간단 CSV 파서 (따옴표 처리 포함)
-  function parseCSV(text) {
-    // BOM 제거
-    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-    const rows = [];
-    let cur = [];
-    let field = '';
-    let inQuote = false;
-    for (let i = 0; i < text.length; i++) {
-      const c = text[i];
-      if (inQuote) {
-        if (c === '"') {
-          if (text[i+1] === '"') { field += '"'; i++; }
-          else inQuote = false;
-        } else field += c;
-      } else {
-        if (c === '"') inQuote = true;
-        else if (c === ',') { cur.push(field); field = ''; }
-        else if (c === '\n' || c === '\r') {
-          if (c === '\r' && text[i+1] === '\n') i++;
-          cur.push(field); field = '';
-          if (cur.length > 1 || cur[0] !== '') rows.push(cur);
-          cur = [];
-        } else field += c;
-      }
-    }
-    if (field !== '' || cur.length > 0) {
-      cur.push(field);
-      if (cur.length > 1 || cur[0] !== '') rows.push(cur);
-    }
-    return rows;
-  }
-
-  function downloadTemplate() {
-    const headers = '품명,분류,규격,단위,현재고,안전재고,단가,위치,거래처,비고';
-    const sample = '"펀치다이","금형부품","M10x50","EA","5","3","15000","A-01","동광공구",""';
-    const csv = '\uFEFF' + headers + '\n' + sample + '\n';
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = '재고_업로드양식.csv';
-    a.click();
-  }
-
-  async function uploadCSV(file) {
-    if (!file) return;
-    const result = $('uploadResult');
-    result.style.display = 'block';
-    result.style.background = '#fff3cd';
-    result.style.color = '#856404';
-    result.textContent = '⏳ 처리 중...';
-
-    try {
-      const text = await file.text();
-      const rows = parseCSV(text);
-      if (rows.length < 2) {
-        throw new Error('데이터가 없습니다 (헤더 + 최소 1행 필요)');
-      }
-
-      const header = rows[0].map(h => h.trim());
-      const expected = ['품명','분류','규격','단위','현재고','안전재고','단가','위치','거래처','비고'];
-      // 헤더 매핑
-      const idx = {};
-      expected.forEach(h => { idx[h] = header.indexOf(h); });
-      if (idx['품명'] < 0) {
-        throw new Error('"품명" 컬럼을 찾을 수 없습니다. 양식을 확인하세요.');
-      }
-
-      const dataRows = rows.slice(1).filter(r => (r[idx['품명']] || '').trim() !== '');
-      if (dataRows.length === 0) {
-        throw new Error('업로드할 데이터 행이 없습니다.');
-      }
-
-      // 기존 품목 이름->id 맵
-      const nameMap = {};
-      items.forEach(i => { nameMap[i.name] = i; });
-
-      let added = 0, updated = 0, failed = 0;
-      const errors = [];
-
-      for (let r = 0; r < dataRows.length; r++) {
-        const row = dataRows[r];
-        const get = key => idx[key] >= 0 ? (row[idx[key]] || '').trim() : '';
-        const name = get('품명');
-        if (!name) { failed++; continue; }
-
-        const data = {
-          name: name,
-          category: get('분류') || '기타',
-          spec: get('규격'),
-          unit: get('단위') || 'EA',
-          stock: parseInt(get('현재고')) || 0,
-          min_stock: parseInt(get('안전재고')) || 0,
-          price: parseInt(get('단가')) || 0,
-          location: get('위치'),
-          vendor: get('거래처'),
-          memo: get('비고')
-        };
-
-        // 새 분류면 자동 추가
-        if (data.category) ensureCategory(data.category);
-
-        try {
-          const existing = nameMap[name];
-          if (sb) {
-            if (existing) {
-              data.updated_at = new Date().toISOString();
-              const rr = await sb.from(T_ITEMS).update(data).eq('id', existing.id);
-              if (rr.error) throw rr.error;
-              updated++;
-            } else {
-              const rr = await sb.from(T_ITEMS).insert(data);
-              if (rr.error) throw rr.error;
-              added++;
-            }
-          } else {
-            if (existing) {
-              const ix = items.findIndex(x => x.id === existing.id);
-              if (ix >= 0) items[ix] = Object.assign({}, items[ix], data);
-              updated++;
-            } else {
-              data.id = Date.now() + r;
-              data.created_at = new Date().toISOString();
-              items.push(data);
-              added++;
-            }
-          }
-        } catch(e) {
-          failed++;
-          if (errors.length < 3) errors.push(name + ': ' + e.message);
-        }
-      }
-
-      if (!sb) saveLocal();
-      await loadData();
-
-      result.style.background = '#d4edda';
-      result.style.color = '#155724';
-      let msg = '✅ 완료! 추가 ' + added + '건, 수정 ' + updated + '건';
-      if (failed > 0) {
-        msg += ', 실패 ' + failed + '건';
-        if (errors.length > 0) msg += '\n' + errors.join('\n');
-      }
-      result.style.whiteSpace = 'pre-line';
-      result.textContent = msg;
-    } catch(e) {
-      result.style.background = '#f8d7da';
-      result.style.color = '#721c24';
-      result.textContent = '❌ 실패: ' + e.message;
-    }
-    $('csvInput').value = '';
-  }
-
-
+  // ============ Tab Switch ============
   function switchTab(name) {
     document.querySelectorAll('.tab').forEach(t => {
       t.classList.toggle('active', t.dataset.tab === name);
@@ -1386,14 +1073,11 @@ input[type="file"] { display: none; }
     tap('btnItemSave', saveItem);
     tap('btnDelete', deleteItem);
 
-    // 사진 - 카메라/갤러리 분리
-    tap('btnTakePhoto', () => $('photoInputCamera').click());
-    tap('btnChoosePhoto', () => $('photoInputGallery').click());
+    // 사진
+    tap('photoArea', () => $('photoInput').click());
+    tap('btnChangePhoto', () => $('photoInput').click());
     tap('btnRemovePhoto', clearPhoto);
-    $('photoInputCamera').addEventListener('change', e => {
-      onPhotoSelect(e.target.files[0]);
-    });
-    $('photoInputGallery').addEventListener('change', e => {
+    $('photoInput').addEventListener('change', e => {
       onPhotoSelect(e.target.files[0]);
     });
 
@@ -1405,24 +1089,16 @@ input[type="file"] { display: none; }
 
     // 설정
     tap('btnSettingsClose', () => closeModal('modalSettings'));
-    tap('btnAddCategory', addCategory);
-    $('newCategoryInput').addEventListener('keypress', e => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        addCategory();
-      }
+    tap('btnTestConn', testConnection);
+    tap('btnSettingsSave', saveSettings);
+    tap('eyeToggle', () => {
+      const inp = $('cfgKey');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
     });
 
     // 내보내기
     tap('btnExportItems', () => exportCSV('items'));
     tap('btnExportHistory', () => exportCSV('history'));
-
-    // CSV 업로드
-    tap('btnDownloadTemplate', downloadTemplate);
-    tap('btnUploadCSV', () => $('csvInput').click());
-    $('csvInput').addEventListener('change', e => {
-      uploadCSV(e.target.files[0]);
-    });
 
     // 모달 배경
     document.querySelectorAll('.modal-bg').forEach(bg => {
@@ -1432,9 +1108,6 @@ input[type="file"] { display: none; }
     });
 
     initSupabase();
-    loadCategories();
-    fillCategorySelects();
-    renderCategoryList();
     loadData();
   });
 })();
