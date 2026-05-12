@@ -810,7 +810,7 @@ input[type="file"] { display: none; }
   async function loadData() {
     if (sb) {
       try {
-        const r1 = await sb.from(T_ITEMS).select('*').order('name');
+        const r1 = await sb.from(T_ITEMS).select('*');
         if (r1.error) throw r1.error;
         items = r1.data || [];
         const r2 = await sb.from(T_HIST).select('*').order('created_at', { ascending: false }).limit(200);
@@ -963,6 +963,15 @@ input[type="file"] { display: none; }
     if (locFilter) {
       $('locFilterCount').textContent = '(' + filtered.length + '건)';
     }
+
+    // 분류 → 품명 → 규격 순 자동정렬
+    filtered.sort((a, b) => {
+      const ca = (a.category || '').localeCompare(b.category || '', 'ko');
+      if (ca !== 0) return ca;
+      const na = (a.name || '').localeCompare(b.name || '', 'ko');
+      if (na !== 0) return na;
+      return (a.spec || '').localeCompare(b.spec || '', 'ko');
+    });
 
     const list = $('itemList');
     if (filtered.length === 0) {
