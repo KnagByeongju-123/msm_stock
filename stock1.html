@@ -964,8 +964,10 @@ input[type="file"] { display: none; }
       $('locFilterCount').textContent = '(' + filtered.length + '건)';
     }
 
-    // 분류 → 품명 → 규격 순 자동정렬
+    // 위치 → 분류 → 품명 → 규격 순 자동정렬
     filtered.sort((a, b) => {
+      const la = (a.location || '').localeCompare(b.location || '', 'ko');
+      if (la !== 0) return la;
       const ca = (a.category || '').localeCompare(b.category || '', 'ko');
       if (ca !== 0) return ca;
       const na = (a.name || '').localeCompare(b.name || '', 'ko');
