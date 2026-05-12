@@ -224,6 +224,38 @@ header h1 .ver {
 }
 .date-quick.active { background: #1a3a5c; color: white; border-color: #1a3a5c; }
 
+/* 이력 검색창 */
+.hist-search-wrap {
+  position: relative;
+}
+.hist-search-row {
+  display: flex; gap: 6px; margin-bottom: 8px;
+}
+.hist-search-row input {
+  flex: 1; padding: 9px 12px; border: 1px solid #ddd;
+  border-radius: 8px; font-size: 14px; font-family: inherit;
+}
+.hist-search-row input:focus { outline: none; border-color: #1a3a5c; }
+.btn-hist-search {
+  padding: 9px 16px; background: #1a3a5c; color: white;
+  border: none; border-radius: 8px; font-size: 14px;
+  font-family: inherit; cursor: pointer; white-space: nowrap;
+}
+.btn-hist-search:active { opacity: 0.8; }
+.hist-autocomplete {
+  position: absolute; top: 100%; left: 0; right: 52px;
+  background: white; border: 1px solid #ddd; border-top: none;
+  border-radius: 0 0 8px 8px; z-index: 200;
+  max-height: 200px; overflow-y: auto; display: none;
+}
+.hist-ac-item {
+  padding: 10px 12px; font-size: 13px; cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+.hist-ac-item:last-child { border-bottom: none; }
+.hist-ac-item:hover, .hist-ac-item.active { background: #e7f1fb; }
+.hist-ac-item mark { background: none; color: #1a3a5c; font-weight: 700; }
+
 #errMsg {
   position: fixed; bottom: 90px; left: 10px; right: 10px;
   background: #dc3545; color: white; padding: 10px;
@@ -355,8 +387,12 @@ input[type="file"] { display: none; }
   </div>
 
   <div id="page-history" style="display:none">
-    <div class="search-bar">
-      <input type="text" id="historySearch" placeholder="품명 검색">
+    <div class="hist-search-wrap">
+      <div class="hist-search-row">
+        <input type="text" id="historySearch" placeholder="품명 검색 후 선택 또는 검색" autocomplete="off">
+        <button class="btn-hist-search" id="btnHistSearch" type="button">검색</button>
+      </div>
+      <div class="hist-autocomplete" id="histAC"></div>
     </div>
 
     <!-- 일자 빠른선택 -->
@@ -1735,7 +1771,73 @@ input[type="file"] { display: none; }
     // 검색
     $('searchInput').addEventListener('input', renderList);
     $('filterCat').addEventListener('change', renderList);
-    $('historySearch').addEventListener('input', renderHistory);
+
+    // 이력 자동완성
+    const hInp = $('historySearch');
+    const hAC = $('histAC');
+    let acIdx = -1;
+
+    function getHistNames() {
+      const map = {};
+      hist.forEach(h => { if (h.item_name) map[h.item_name] = true; });
+      return Object.keys(map).sort((a, b) => a.localeCompare(b, 'ko'));
+    }
+
+    function showAC(q) {
+      if (!q) { hAC.style.display = 'none'; return; }
+      const matches = getHistNames().filter(n => n.toLowerCase().includes(q.toLowerCase()));
+      if (matches.length === 0) { hAC.style.display = 'none'; return; }
+      hAC.innerHTML = '';
+      matches.slice(0, 20).forEach((name) => {
+        const div = document.createElement('div');
+        div.className = 'hist-ac-item';
+        const ql = q.toLowerCase();
+        const nl = name.toLowerCase();
+        const idx = nl.indexOf(ql);
+        div.innerHTML = escapeHtml(name.slice(0, idx)) +
+          '<mark>' + escapeHtml(name.slice(idx, idx + q.length)) + '</mark>' +
+          escapeHtml(name.slice(idx + q.length));
+        div.addEventListener('mousedown', e => { e.preventDefault(); });
+        div.addEventListener('click', () => {
+          hInp.value = name;
+          hAC.style.display = 'none';
+          acIdx = -1;
+          renderHistory();
+        });
+        hAC.appendChild(div);
+      });
+      acIdx = -1;
+      hAC.style.display = 'block';
+    }
+
+    hInp.addEventListener('input', () => { showAC(hInp.value); });
+    hInp.addEventListener('keydown', e => {
+      const its = hAC.querySelectorAll('.hist-ac-item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        acIdx = Math.min(acIdx + 1, its.length - 1);
+        its.forEach((el, i) => el.classList.toggle('active', i === acIdx));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        acIdx = Math.max(acIdx - 1, -1);
+        its.forEach((el, i) => el.classList.toggle('active', i === acIdx));
+      } else if (e.key === 'Enter') {
+        if (acIdx >= 0 && its[acIdx]) {
+          hInp.value = its[acIdx].textContent;
+          hAC.style.display = 'none'; acIdx = -1;
+        }
+        renderHistory();
+      } else if (e.key === 'Escape') {
+        hAC.style.display = 'none'; acIdx = -1;
+      }
+    });
+    hInp.addEventListener('blur', () => {
+      setTimeout(() => { hAC.style.display = 'none'; acIdx = -1; }, 150);
+    });
+    tap($('btnHistSearch'), () => {
+      hAC.style.display = 'none';
+      renderHistory();
+    });
 
     // 이력 일자 빠른선택
     document.querySelectorAll('.date-quick').forEach(b => {
