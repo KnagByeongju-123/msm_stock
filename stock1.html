@@ -1779,6 +1779,7 @@ input[type="file"] { display: none; }
 
     function getHistNames() {
       const map = {};
+      items.forEach(i => { if (i.name) map[i.name] = true; });
       hist.forEach(h => { if (h.item_name) map[h.item_name] = true; });
       return Object.keys(map).sort((a, b) => a.localeCompare(b, 'ko'));
     }
