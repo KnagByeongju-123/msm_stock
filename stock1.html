@@ -201,6 +201,7 @@ header h1 .ver {
 }
 .history-item .row2 .h-edit { background: #e7f1fb; color: #1a3a5c; }
 .history-item .row2 .h-cancel { background: #fff; color: #dc3545; border: 1px solid #f5c6cb; }
+.history-item .row2 .h-del { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
 .history-item.cancelled { opacity: 0.55; background: #f8f9fa; }
 .history-item.cancelled .row2 { display: none; }
 .history-item .badge-cancel {
@@ -1140,11 +1141,11 @@ input[type="file"] { display: none; }
           '</div>' +
           '<span class="time">' + time + '</span>' +
         '</div>' +
-        (isCancelled ? '' :
         '<div class="row2">' +
-          '<button class="h-edit" data-act="edit" data-id="' + h.id + '" type="button">✏️ 메모 수정</button>' +
-          '<button class="h-cancel" data-act="cancel" data-id="' + h.id + '" type="button">↩️ 취소</button>' +
-        '</div>') +
+          (isCancelled ? '' : '<button class="h-edit" data-act="edit" data-id="' + h.id + '" type="button">✏️ 메모 수정</button>') +
+          (isCancelled ? '' : '<button class="h-cancel" data-act="cancel" data-id="' + h.id + '" type="button">↩️ 취소</button>') +
+          '<button class="h-del" data-act="del" data-id="' + h.id + '" type="button">🗑️ 삭제</button>' +
+        '</div>' +
       '</div>';
     }).join('');
 
@@ -1161,6 +1162,13 @@ input[type="file"] { display: none; }
         if (e && e.stopPropagation) e.stopPropagation();
         const h = hist.find(x => String(x.id) === String(btn.dataset.id));
         if (h) cancelHistory(h);
+      });
+    });
+    list.querySelectorAll('.h-del').forEach(btn => {
+      tap(btn, e => {
+        if (e && e.stopPropagation) e.stopPropagation();
+        const h = hist.find(x => String(x.id) === String(btn.dataset.id));
+        if (h) deleteHistory(h);
       });
     });
   }
@@ -1193,12 +1201,13 @@ input[type="file"] { display: none; }
     }
     const reverseType = h.type === 'in' ? 'out' : 'in';
     const reverseLabel = reverseType === 'in' ? '+' + h.qty + ' 증가' : '-' + h.qty + ' 차감';
+    const currentStock = item.stock;
     if (!confirm(
-      '이 이력을 취소하시겠습니까?\n\n' +
+      '[이력 취소] 재고가 원상복귀됩니다\n\n' +
       '품목: ' + h.item_name + '\n' +
       '원본: ' + (h.type === 'in' ? '입고' : '출고') + ' ' + h.qty + '\n' +
-      '재고 보정: ' + reverseLabel + '\n\n' +
-      '※ 이력은 "취소됨" 표시로 보존되고, 취소 처리 이력이 추가됩니다.'
+      '현재 재고: ' + currentStock + ' → 복귀 후: ' + newStock + '\n\n' +
+      '※ 이력은 "취소됨" 표시로 보존됩니다.'
     )) return;
 
     const newStock = h.type === 'in' ? item.stock - h.qty : item.stock + h.qty;
@@ -1254,6 +1263,29 @@ input[type="file"] { display: none; }
       await loadData();
     } catch(e) {
       showErr('취소 처리 실패: ' + e.message);
+    }
+  }
+
+  // 이력 삭제 (재고 보정 없이 레코드만 삭제)
+  async function deleteHistory(h) {
+    const isCancelled = !!h.cancelled || (h.memo && h.memo.indexOf('[취소됨]') === 0);
+    const typeLabel = h.type === 'in' ? '입고' : '출고';
+    const msg = isCancelled
+      ? '[이력 삭제]\n\n품목: ' + h.item_name + '\n구분: ' + typeLabel + ' ' + h.qty + '\n\n※ 취소된 이력입니다. 재고 변동 없이 삭제됩니다.'
+      : '[이력 삭제]\n\n품목: ' + h.item_name + '\n구분: ' + typeLabel + ' ' + h.qty + '\n\n⚠️ 재고 보정 없이 이력만 삭제됩니다.\n재고를 원상복귀하려면 먼저 [↩️ 취소]를 사용하세요.';
+    if (!confirm(msg)) return;
+    try {
+      if (sb) {
+        const r = await sb.from(T_HIST).delete().eq('id', h.id);
+        if (r.error) throw r.error;
+      } else {
+        const idx = hist.findIndex(x => x.id === h.id);
+        if (idx >= 0) hist.splice(idx, 1);
+        saveLocal();
+      }
+      await loadData();
+    } catch(e) {
+      showErr('삭제 실패: ' + e.message);
     }
   }
 
