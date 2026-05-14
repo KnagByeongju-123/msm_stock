@@ -208,6 +208,16 @@ header h1 .ver {
   display: inline-block; font-size: 10px; padding: 1px 6px;
   background: #6c757d; color: white; border-radius: 3px; margin-left: 6px;
 }
+.history-item .badge-deleted {
+  display: inline-block; font-size: 10px; padding: 1px 6px;
+  background: #dc3545; color: white; border-radius: 3px; margin-left: 6px;
+}
+.history-item.deleted { opacity: 0.5; background: #fff5f5; border-left: 3px solid #dc3545; }
+.history-item.deleted .h-edit,
+.history-item.deleted .h-cancel,
+.history-item.deleted .h-del { display: none; }
+.history-item .row2 .h-restore { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.history-item .row2 .h-purge { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 .history-type {
   padding: 2px 8px; border-radius: 4px; font-weight: 600;
   font-size: 11px; margin-right: 8px;
@@ -414,7 +424,12 @@ input[type="file"] { display: none; }
       </div>
     </div>
 
-    <div id="historyCount" style="font-size:12px;color:#666;margin-bottom:8px;text-align:right"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <label style="font-size:12px;color:#555;display:flex;align-items:center;gap:4px;cursor:pointer">
+        <input type="checkbox" id="showDeletedHist" style="width:16px;height:16px"> 삭제된 이력 보기
+      </label>
+      <div id="historyCount" style="font-size:12px;color:#666;text-align:right"></div>
+    </div>
 
     <div id="historyList"></div>
   </div>
@@ -424,8 +439,8 @@ input[type="file"] { display: none; }
       <h3 style="margin-top:0">📤 데이터 내보내기</h3>
       <p style="font-size:13px;color:#666">현재 재고 또는 이력을 Excel 파일로 내려받습니다.</p>
       <div style="display:flex;gap:8px">
-        <button class="btn-primary" style="flex:1" id="btnExportItems">📦 재고목록(필터추가)</button>
-        <button class="btn-primary" style="flex:1" id="btnExportHistory">📋 입출고이력(필터추가)</button>
+        <button class="btn-primary" style="flex:1" id="btnExportItems">📦 재고목록</button>
+        <button class="btn-primary" style="flex:1" id="btnExportHistory">📋 입출고이력</button>
       </div>
     </div>
 
@@ -1130,13 +1145,18 @@ input[type="file"] { display: none; }
   function renderHistory() {
     const q = $('historySearch').value.toLowerCase();
     const range = getDateRangeMs();
+    const showDeleted = $('showDeletedHist') && $('showDeletedHist').checked;
     const filtered = hist.filter(h => {
       const matchQ = !q || (h.item_name || '').toLowerCase().includes(q);
       const t = new Date(h.created_at).getTime();
       const matchD = t >= range.from && t < range.to;
-      return matchQ && matchD;
+      const isDel = isDeletedHist(h);
+      const matchDel = showDeleted || !isDel;
+      return matchQ && matchD && matchDel;
     });
-    $('historyCount').textContent = '총 ' + filtered.length + '건';
+    const delCount = hist.filter(h => isDeletedHist(h)).length;
+    const countTxt = '총 ' + filtered.length + '건' + (delCount > 0 ? ' (삭제됨 ' + delCount + '건)' : '');
+    $('historyCount').textContent = countTxt;
     const list = $('historyList');
     if (filtered.length === 0) {
       list.innerHTML = '<div class="empty-state">이력이 없습니다.</div>';
@@ -1147,23 +1167,30 @@ input[type="file"] { display: none; }
         month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
       });
       const isCancelled = !!h.cancelled || (h.memo && h.memo.indexOf('[취소됨]') === 0);
-      const typeCls = isCancelled ? (h.type + '-cancel') : h.type;
+      const isDeleted = isDeletedHist(h);
+      const typeCls = (isCancelled || isDeleted) ? (h.type + '-cancel') : h.type;
       const typeLabel = h.type === 'in' ? '입고' : '출고';
-      return '<div class="history-item' + (isCancelled ? ' cancelled' : '') + '" data-id="' + h.id + '">' +
+      const stateCls = isDeleted ? ' deleted' : (isCancelled ? ' cancelled' : '');
+      return '<div class="history-item' + stateCls + '" data-id="' + h.id + '">' +
         '<div class="row1">' +
           '<div class="info">' +
             '<span class="history-type ' + typeCls + '">' + typeLabel + '</span>' +
             '<b>' + escapeHtml(h.item_name) + '</b> ' +
             '<span style="color:#1a3a5c;font-weight:600">' + (h.type === 'in' ? '+' : '-') + h.qty + '</span>' +
-            (isCancelled ? '<span class="badge-cancel">취소됨</span>' : '') +
+            (isDeleted ? '<span class="badge-deleted">삭제됨</span>' : '') +
+            (isCancelled && !isDeleted ? '<span class="badge-cancel">취소됨</span>' : '') +
             (h.memo ? '<div style="color:#666;font-size:12px;margin-top:2px;word-break:break-all">' + escapeHtml(h.memo) + '</div>' : '') +
           '</div>' +
           '<span class="time">' + time + '</span>' +
         '</div>' +
         '<div class="row2">' +
-          (isCancelled ? '' : '<button class="h-edit" data-act="edit" data-id="' + h.id + '" type="button">✏️ 메모 수정</button>') +
-          (isCancelled ? '' : '<button class="h-cancel" data-act="cancel" data-id="' + h.id + '" type="button">↩️ 취소</button>') +
-          '<button class="h-del" data-act="del" data-id="' + h.id + '" type="button">🗑️ 삭제</button>' +
+          (isDeleted
+            ? '<button class="h-restore" data-act="restore" data-id="' + h.id + '" type="button">↩️ 복원</button>' +
+              '<button class="h-purge" data-act="purge" data-id="' + h.id + '" type="button">🗑️ 영구삭제</button>'
+            : (isCancelled ? '' : '<button class="h-edit" data-act="edit" data-id="' + h.id + '" type="button">✏️ 메모 수정</button>') +
+              (isCancelled ? '' : '<button class="h-cancel" data-act="cancel" data-id="' + h.id + '" type="button">↩️ 취소</button>') +
+              '<button class="h-del" data-act="del" data-id="' + h.id + '" type="button">🗑️ 삭제</button>'
+          ) +
         '</div>' +
       '</div>';
     }).join('');
@@ -1188,6 +1215,20 @@ input[type="file"] { display: none; }
         if (e && e.stopPropagation) e.stopPropagation();
         const h = hist.find(x => String(x.id) === String(btn.dataset.id));
         if (h) deleteHistory(h);
+      });
+    });
+    list.querySelectorAll('.h-restore').forEach(btn => {
+      tap(btn, e => {
+        if (e && e.stopPropagation) e.stopPropagation();
+        const h = hist.find(x => String(x.id) === String(btn.dataset.id));
+        if (h) restoreHistory(h);
+      });
+    });
+    list.querySelectorAll('.h-purge').forEach(btn => {
+      tap(btn, e => {
+        if (e && e.stopPropagation) e.stopPropagation();
+        const h = hist.find(x => String(x.id) === String(btn.dataset.id));
+        if (h) purgeHistory(h);
       });
     });
   }
@@ -1285,14 +1326,69 @@ input[type="file"] { display: none; }
     }
   }
 
-  // 이력 삭제 (재고 보정 없이 레코드만 삭제)
+  // 이력 삭제 (소프트 삭제: deleted 플래그만 표시, 복원 가능)
   async function deleteHistory(h) {
     const isCancelled = !!h.cancelled || (h.memo && h.memo.indexOf('[취소됨]') === 0);
     const typeLabel = h.type === 'in' ? '입고' : '출고';
     const msg = isCancelled
-      ? '[이력 삭제]\n\n품목: ' + h.item_name + '\n구분: ' + typeLabel + ' ' + h.qty + '\n\n※ 취소된 이력입니다. 재고 변동 없이 삭제됩니다.'
-      : '[이력 삭제]\n\n품목: ' + h.item_name + '\n구분: ' + typeLabel + ' ' + h.qty + '\n\n⚠️ 재고 보정 없이 이력만 삭제됩니다.\n재고를 원상복귀하려면 먼저 [↩️ 취소]를 사용하세요.';
+      ? '[이력 삭제]\n\n품목: ' + h.item_name + '\n구분: ' + typeLabel + ' ' + h.qty + '\n\n※ 취소된 이력입니다. 재고 변동 없이 삭제 표시합니다.\n[삭제된 이력 보기]에서 복원할 수 있습니다.'
+      : '[이력 삭제]\n\n품목: ' + h.item_name + '\n구분: ' + typeLabel + ' ' + h.qty + '\n\n⚠️ 재고 보정 없이 이력만 삭제 표시됩니다.\n재고를 원상복귀하려면 먼저 [↩️ 취소]를 사용하세요.\n\n[삭제된 이력 보기]에서 복원할 수 있습니다.';
     if (!confirm(msg)) return;
+    const user = getCurrentUser();
+    const deletedAt = new Date().toISOString();
+    try {
+      if (sb) {
+        // deleted 컬럼 시도 → 실패 시 memo prefix fallback
+        const r = await sb.from(T_HIST).update({ deleted: true }).eq('id', h.id);
+        if (r.error) {
+          await sb.from(T_HIST).update({
+            memo: '[삭제됨' + (user ? ' ' + user : '') + ' ' + deletedAt + '] ' + (h.memo || '')
+          }).eq('id', h.id);
+        }
+      } else {
+        const idx = hist.findIndex(x => x.id === h.id);
+        if (idx >= 0) {
+          hist[idx].deleted = true;
+          hist[idx].deleted_at = deletedAt;
+          hist[idx].deleted_by = user || '';
+        }
+        saveLocal();
+      }
+      await loadData();
+    } catch(e) {
+      showErr('삭제 실패: ' + e.message);
+    }
+  }
+
+  // 이력 복원
+  async function restoreHistory(h) {
+    if (!confirm('[이력 복원]\n\n품목: ' + h.item_name + '\n\n삭제 표시를 해제하고 이력을 복원합니다.')) return;
+    try {
+      if (sb) {
+        const r = await sb.from(T_HIST).update({ deleted: false }).eq('id', h.id);
+        if (r.error) {
+          // memo prefix fallback 복원
+          const memo = (h.memo || '').replace(/^\[삭제됨[^\]]*\]\s*/, '');
+          await sb.from(T_HIST).update({ memo: memo }).eq('id', h.id);
+        }
+      } else {
+        const idx = hist.findIndex(x => x.id === h.id);
+        if (idx >= 0) {
+          hist[idx].deleted = false;
+          delete hist[idx].deleted_at;
+          delete hist[idx].deleted_by;
+        }
+        saveLocal();
+      }
+      await loadData();
+    } catch(e) {
+      showErr('복원 실패: ' + e.message);
+    }
+  }
+
+  // 이력 영구삭제 (DB에서 완전 제거 - 복원 불가)
+  async function purgeHistory(h) {
+    if (!confirm('⚠️ [영구 삭제]\n\n품목: ' + h.item_name + '\n\nDB에서 완전히 제거됩니다.\n복원할 수 없습니다. 계속하시겠습니까?')) return;
     try {
       if (sb) {
         const r = await sb.from(T_HIST).delete().eq('id', h.id);
@@ -1304,8 +1400,13 @@ input[type="file"] { display: none; }
       }
       await loadData();
     } catch(e) {
-      showErr('삭제 실패: ' + e.message);
+      showErr('영구삭제 실패: ' + e.message);
     }
+  }
+
+  // 삭제 상태 판단 (DB 컬럼 또는 memo prefix)
+  function isDeletedHist(h) {
+    return !!h.deleted || (h.memo && h.memo.indexOf('[삭제됨') === 0);
   }
 
   // ============ Detail Modal ============
@@ -1665,19 +1766,25 @@ input[type="file"] { display: none; }
         const cat = itemCatMap[String(h.item_id)] || '';
         return catSet.has(cat);
       });
-      const headers = ['일시','품명','분류','구분','수량','메모'];
-      const rows = filteredHist.map(h => [
-        new Date(h.created_at).toLocaleString('ko-KR'),
-        h.item_name || '',
-        itemCatMap[String(h.item_id)] || '',
-        h.type === 'in' ? '입고' : '출고',
-        Number(h.qty) || 0,
-        h.memo || ''
-      ]);
+      const headers = ['일시','품명','분류','구분','수량','상태','메모'];
+      const rows = filteredHist.map(h => {
+        const isDel = isDeletedHist(h);
+        const isCancel = !!h.cancelled || (h.memo && h.memo.indexOf('[취소됨]') === 0);
+        const state = isDel ? '삭제됨' : (isCancel ? '취소됨' : '정상');
+        return [
+          new Date(h.created_at).toLocaleString('ko-KR'),
+          h.item_name || '',
+          itemCatMap[String(h.item_id)] || '',
+          h.type === 'in' ? '입고' : '출고',
+          Number(h.qty) || 0,
+          state,
+          h.memo || ''
+        ];
+      });
       ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-      ws['!cols'] = [{wch:20},{wch:22},{wch:12},{wch:8},{wch:8},{wch:30}];
+      ws['!cols'] = [{wch:20},{wch:22},{wch:12},{wch:8},{wch:8},{wch:8},{wch:30}];
       ws['!freeze'] = { xSplit: 0, ySplit: 1 };
-      ws['!autofilter'] = { ref: 'A1:F' + (rows.length + 1) };
+      ws['!autofilter'] = { ref: 'A1:G' + (rows.length + 1) };
       sheetName = '입출고이력';
       fname = '입출고이력_' + today + '.xlsx';
     }
@@ -1956,6 +2063,11 @@ input[type="file"] { display: none; }
       hAC.style.display = 'none';
       renderHistory();
     });
+
+    // 삭제된 이력 보기 토글
+    if ($('showDeletedHist')) {
+      $('showDeletedHist').addEventListener('change', renderHistory);
+    }
 
     // 이력 일자 빠른선택
     document.querySelectorAll('.date-quick').forEach(b => {
